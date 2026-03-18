@@ -4,6 +4,7 @@
       xmlns:utu="using:Uno.Toolkit.UI"
       xmlns:lvc="using:LiveChartsCore.SkiaSharpView.WinUI"
       xmlns:controls="using:Meridian.Controls"
+      xmlns:views="using:Meridian.Views"
       xmlns:converters="using:Meridian.Presentation"
       Background="{StaticResource MeridianBackgroundBrush}">
 
@@ -13,6 +14,7 @@
         <converters:DecimalFormatConverter x:Key="DecimalFormat" />
     </Page.Resources>
 
+    <Grid>
     <ScrollViewer>
         <Grid MaxWidth="1400" HorizontalAlignment="Center" Padding="32,20">
             <Grid.RowDefinitions>
@@ -68,7 +70,8 @@
                     Padding="0,8"
                     BorderThickness="0,1"
                     BorderBrush="{StaticResource MeridianBorderBrush}">
-                <TextBlock Text="⣤⣴⣶⣷ AAPL 247.63 +1.40% │ ⣴⣶⣷ NVDA 892.14 −1.42% │ ⣤⣴ MSFT 468.21 +1.12% │ ⣤⣶⣷⣿ GOOGL 142.58 −0.86% │ ⣴⣶⣷ META 350.42 +2.50%"
+                <TextBlock x:Name="TickerTapeText"
+                           Text="⣤⣴⣶⣷ AAPL 247.63 +1.40% │ ⣴⣶⣷ NVDA 892.14 −1.42% │ ⣤⣴ MSFT 468.21 +1.12%"
                            FontFamily="{StaticResource IBMPlexMonoFont}"
                            FontSize="11"
                            Foreground="{StaticResource MeridianTextSubtleBrush}"
@@ -203,7 +206,8 @@
                                                     BorderBrush="{StaticResource MeridianAccentBrush}"
                                                     Foreground="{StaticResource MeridianAccentBrush}"
                                                     Background="{StaticResource MeridianAccentBgTintBrush}"
-                                                    CharacterSpacing="60" />
+                                                    CharacterSpacing="60"
+                                                    Click="OnChartTradeButtonClick" />
                                         </StackPanel>
                                     </StackPanel>
                                 </StackPanel>
@@ -467,7 +471,8 @@
                                                                 CornerRadius="8" BorderThickness="1"
                                                                 BorderBrush="{StaticResource MeridianAccentBrush}"
                                                                 Foreground="{StaticResource MeridianAccentBrush}"
-                                                                Background="{StaticResource MeridianAccentBgTintBrush}" />
+                                                                Background="{StaticResource MeridianAccentBgTintBrush}"
+                                                                Tapped="OnWatchlistTradeButtonTapped" />
                                                     </StackPanel>
                                                 </StackPanel>
                                             </Border>
@@ -557,4 +562,15 @@
             </Grid>
         </Grid>
     </ScrollViewer>
+
+    <!-- ═══════════ TRADE DRAWER OVERLAY ═══════════ -->
+    <!-- Backdrop -->
+    <Border x:Name="DrawerBackdrop" Visibility="Collapsed"
+            Background="#40000000"
+            Tapped="OnDrawerBackdropTapped" />
+
+    <!-- Drawer (right-aligned) -->
+    <views:TradeDrawer x:Name="TradeDrawerPanel" Visibility="Collapsed"
+                       HorizontalAlignment="Right" VerticalAlignment="Stretch" />
+    </Grid>
 </Page>
