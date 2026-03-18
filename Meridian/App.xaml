@@ -20,9 +20,9 @@
           ColorOverrideSource="ms-appx:///Themes/ColorPaletteOverride.xaml">
           <utum:MaterialToolkitTheme.FontOverrideDictionary>
             <ResourceDictionary>
-              <FontFamily x:Key="MaterialLightFontFamily">ms-appx:///Assets/Fonts/Outfit/Outfit-VariableFont_wght.ttf#Outfit</FontFamily>
-              <FontFamily x:Key="MaterialRegularFontFamily">ms-appx:///Assets/Fonts/Outfit/Outfit-VariableFont_wght.ttf#Outfit</FontFamily>
-              <FontFamily x:Key="MaterialMediumFontFamily">ms-appx:///Assets/Fonts/Outfit/Outfit-VariableFont_wght.ttf#Outfit</FontFamily>
+              <FontFamily x:Key="MaterialLightFontFamily">ms-appx:///Assets/Fonts/Outfit/static/Outfit-Regular.ttf#Outfit</FontFamily>
+              <FontFamily x:Key="MaterialRegularFontFamily">ms-appx:///Assets/Fonts/Outfit/static/Outfit-Medium.ttf#Outfit</FontFamily>
+              <FontFamily x:Key="MaterialMediumFontFamily">ms-appx:///Assets/Fonts/Outfit/static/Outfit-SemiBold.ttf#Outfit</FontFamily>
             </ResourceDictionary>
           </utum:MaterialToolkitTheme.FontOverrideDictionary>
         </utum:MaterialToolkitTheme>

@@ -47,7 +47,21 @@ public sealed partial class DashboardPage : Page
         // Trade drawer close event
         TradeDrawerPanel.CloseRequested += (_, _) => CloseTradeDrawer();
 
-        Loaded += async (_, _) => await LoadChartAsync(null);
+        Loaded += async (_, _) =>
+        {
+            await LoadChartAsync(null);
+            await LoadSkiaControlsAsync();
+        };
+    }
+
+    private async Task LoadSkiaControlsAsync()
+    {
+        // Load sector + volume data imperatively (MVUX feed binding doesn't reach SKXamlCanvas DPs)
+        var sectors = await _marketData.GetSectorsAsync(CancellationToken.None);
+        SectorRing.Sectors = sectors.ToList();
+
+        var volume = await _marketData.GetVolumeAsync(CancellationToken.None);
+        VolumeChart.VolumeData = volume.ToList();
     }
 
     private async void OpenTradeDrawer(string ticker)
@@ -87,24 +101,36 @@ public sealed partial class DashboardPage : Page
     }
 
     private int _tickerOffset;
+    private string? _tickerTapeCache;
+
     private void UpdateTickerTape()
     {
         _tickerOffset++;
-        var tickers = _marketData.GetStreamTickers();
-        var sb = new System.Text.StringBuilder();
 
-        foreach (var t in tickers)
+        // Build once on first call, then just rotate braille glyphs
+        if (_tickerTapeCache == null)
         {
-            // Generate braille wave segment
-            for (int i = 0; i < 4; i++)
-            {
-                var idx = (_tickerOffset + i + tickers.IndexOf(t) * 3) % BrailleWaveChars.Length;
-                sb.Append(BrailleWaveChars[idx]);
-            }
-            sb.Append($" {t.Ticker} {t.Price} {t.Delta} │ ");
+            var tickers = _marketData.GetStreamTickers();
+            _tickerTapeCache = string.Join(" │ ",
+                tickers.Select(t => $"____ {t.Ticker} {t.Price} {t.Delta}"));
         }
 
-        TickerTapeText.Text = sb.ToString().TrimEnd(' ', '│', ' ');
+        // Replace ____ placeholders with rotating braille glyphs
+        var ticks = _marketData.GetStreamTickers();
+        var sb = new System.Text.StringBuilder();
+        for (int ti = 0; ti < ticks.Count; ti++)
+        {
+            var t = ticks[ti];
+            for (int i = 0; i < 4; i++)
+            {
+                var idx = (_tickerOffset + i + ti * 3) % BrailleWaveChars.Length;
+                sb.Append(BrailleWaveChars[idx]);
+            }
+            sb.Append($" {t.Ticker} {t.Price} {t.Delta}");
+            if (ti < ticks.Count - 1) sb.Append(" │ ");
+        }
+
+        TickerTapeText.Text = sb.ToString();
     }
 
     private async Task LoadChartAsync(string? ticker)

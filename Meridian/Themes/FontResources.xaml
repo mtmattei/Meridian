@@ -3,8 +3,8 @@
 
     <FontFamily x:Key="InstrumentSerifFont">ms-appx:///Assets/Fonts/Instrument_Serif/InstrumentSerif-Regular.ttf#Instrument Serif</FontFamily>
     <FontFamily x:Key="InstrumentSerifItalicFont">ms-appx:///Assets/Fonts/Instrument_Serif/InstrumentSerif-Italic.ttf#Instrument Serif</FontFamily>
-    <FontFamily x:Key="IBMPlexMonoFont">ms-appx:///Assets/Fonts/IBM_Plex_Mono/IBMPlexMono-Regular.ttf#IBM Plex Mono</FontFamily>
-    <FontFamily x:Key="IBMPlexMonoMediumFont">ms-appx:///Assets/Fonts/IBM_Plex_Mono/IBMPlexMono-Medium.ttf#IBM Plex Mono</FontFamily>
-    <FontFamily x:Key="OutfitFont">ms-appx:///Assets/Fonts/Outfit/Outfit-VariableFont_wght.ttf#Outfit</FontFamily>
+    <FontFamily x:Key="IBMPlexMonoFont">ms-appx:///Assets/Fonts/IBM_Plex_Mono/IBMPlexMono-Medium.ttf#IBM Plex Mono</FontFamily>
+    <FontFamily x:Key="IBMPlexMonoMediumFont">ms-appx:///Assets/Fonts/IBM_Plex_Mono/IBMPlexMono-SemiBold.ttf#IBM Plex Mono</FontFamily>
+    <FontFamily x:Key="OutfitFont">ms-appx:///Assets/Fonts/Outfit/static/Outfit-Medium.ttf#Outfit</FontFamily>
 
 </ResourceDictionary>
