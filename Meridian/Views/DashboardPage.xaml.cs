@@ -299,6 +299,45 @@ public sealed partial class DashboardPage : Page
         }
     }
 
+    // ── Hover effects ──
+
+    private static readonly Microsoft.UI.Xaml.Media.SolidColorBrush HoverBorderBrush =
+        new(Windows.UI.Color.FromArgb(0xFF, 0xC9, 0xA9, 0x6E));
+    private static readonly Microsoft.UI.Xaml.Media.SolidColorBrush DefaultBorderBrush =
+        new(Windows.UI.Color.FromArgb(0xFF, 0xE8, 0xE4, 0xDE));
+    private static readonly Microsoft.UI.Xaml.Media.SolidColorBrush HoverBgBrush =
+        new(Windows.UI.Color.FromArgb(0xFF, 0xFA, 0xF8, 0xF5));
+    private static readonly Microsoft.UI.Xaml.Media.SolidColorBrush TransparentBg =
+        new(Microsoft.UI.Colors.Transparent);
+
+    private void OnCardPointerEntered(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
+    {
+        if (sender is Border b)
+        {
+            b.BorderBrush = HoverBorderBrush;
+            b.Translation = new System.Numerics.Vector3(0, -2, 0);
+        }
+    }
+
+    private void OnCardPointerExited(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
+    {
+        if (sender is Border b)
+        {
+            b.BorderBrush = DefaultBorderBrush;
+            b.Translation = new System.Numerics.Vector3(0, 0, 0);
+        }
+    }
+
+    private void OnRowPointerEntered(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
+    {
+        if (sender is Border b) b.Background = HoverBgBrush;
+    }
+
+    private void OnRowPointerExited(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
+    {
+        if (sender is Border b) b.Background = TransparentBg;
+    }
+
     private void UpdateClock()
     {
         ClockText.Text = DateTime.Now.ToString("ddd, MMM d · hh:mm:ss tt");

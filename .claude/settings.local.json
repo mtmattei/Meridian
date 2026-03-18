@@ -14,7 +14,14 @@
       "Read(//c/Users/Platform006/OneDrive - Uno Platform/Desktop/unOS/AI-builds/Meridian/**)",
       "Bash(xxd)",
       "WebFetch(domain:www.nuget.org)",
-      "WebFetch(domain:livecharts.dev)"
+      "WebFetch(domain:livecharts.dev)",
+      "mcp__uno-app__uno_app_start",
+      "Bash(export DOTNET_MODIFIABLE_ASSEMBLIES=debug)",
+      "mcp__uno-app__uno_app_get_screenshot",
+      "mcp__uno-app__uno_app_get_runtime_info",
+      "mcp__uno-app__uno_app_visualtree_snapshot",
+      "mcp__uno-app__uno_app_close",
+      "mcp__uno-app__uno_app_pointer_click"
     ]
   }
 }

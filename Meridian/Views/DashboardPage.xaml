@@ -52,7 +52,8 @@
                     <StackPanel Orientation="Horizontal" Spacing="6">
                         <TextBlock Text="⠋" FontSize="14"
                                    Foreground="{StaticResource MeridianGainBrush}"
-                                   x:Name="BrailleSpinner" />
+                                   x:Name="BrailleSpinner"
+                                   AutomationProperties.AccessibilityView="Raw" />
                         <TextBlock Text="NYSE Open" FontSize="11" FontWeight="Medium"
                                    Foreground="{StaticResource MeridianTextMutedBrush}" />
                     </StackPanel>
@@ -71,6 +72,7 @@
                     BorderThickness="0,1"
                     BorderBrush="{StaticResource MeridianBorderBrush}">
                 <TextBlock x:Name="TickerTapeText"
+                           AutomationProperties.AccessibilityView="Raw"
                            Text="⣤⣴⣶⣷ AAPL 247.63 +1.40% │ ⣴⣶⣷ NVDA 892.14 −1.42% │ ⣤⣴ MSFT 468.21 +1.12%"
                            FontFamily="{StaticResource IBMPlexMonoFont}"
                            FontSize="11"
@@ -94,7 +96,8 @@
                                FontFamily="{StaticResource InstrumentSerifFont}"
                                FontSize="62"
                                Foreground="{StaticResource MeridianTextPrimaryBrush}"
-                               LineHeight="68" />
+                               LineHeight="68"
+                               AutomationProperties.Name="Portfolio value: $163,842.56" />
                     <StackPanel Orientation="Horizontal" Spacing="14" Margin="0,4,0,0">
                         <Border CornerRadius="100"
                                 Background="{StaticResource MeridianGainBgTintBrush}"
@@ -206,7 +209,6 @@
                                                     BorderBrush="{StaticResource MeridianAccentBrush}"
                                                     Foreground="{StaticResource MeridianAccentBrush}"
                                                     Background="{StaticResource MeridianAccentBgTintBrush}"
-                                                    CharacterSpacing="60"
                                                     Click="OnChartTradeButtonClick" />
                                         </StackPanel>
                                     </StackPanel>
@@ -234,7 +236,8 @@
                             <lvc:CartesianChart x:Name="PerformanceChart"
                                                 Height="240"
                                                 TooltipPosition="Top"
-                                                ZoomMode="None" />
+                                                ZoomMode="None"
+                                                AutomationProperties.Name="Portfolio performance chart, 3 month view" />
                         </StackPanel>
                     </Border>
 
@@ -262,7 +265,10 @@
                                             <Border CornerRadius="12" BorderThickness="1"
                                                     BorderBrush="{StaticResource MeridianBorderBrush}"
                                                     Padding="12,14"
-                                                    Tapped="OnHoldingTapped">
+                                                    Tapped="OnHoldingTapped"
+                                                    PointerEntered="OnCardPointerEntered"
+                                                    PointerExited="OnCardPointerExited"
+                                                    AutomationProperties.Name="{Binding Ticker}">
                                                 <Grid>
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="*" />
@@ -368,7 +374,9 @@
                                             <Border Padding="14,12,22,12"
                                                     BorderThickness="0,0,0,1"
                                                     BorderBrush="#06000000"
-                                                    Tapped="OnWatchlistRowTapped">
+                                                    Tapped="OnWatchlistRowTapped"
+                                                    PointerEntered="OnRowPointerEntered"
+                                                    PointerExited="OnRowPointerExited">
                                                 <Grid>
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="Auto" />
