@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Write(src/**)",
+      "Write(*.cs)",
+      "Write(*.xaml)",
+      "Write(*.csproj)",
+      "Write(*.sln)",
+      "Write(*.props)",
+      "Write(*.targets)",
+      "Write(*.md)",
+      "Write(*.json)",
+      "Write(*.yaml)",
+      "Write(*.yml)"
+    ],
+    "deny": [
+      "Write(./.env)",
+      "Write(./.env.*)",
+      "Write(./secrets/**)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write(*.cs)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "dotnet format --include $CLAUDE_FILE_PATH --verbosity quiet 2>/dev/null || true"
+          }
+        ]
+      }
+    ]
+  }
+}

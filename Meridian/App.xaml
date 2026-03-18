@@ -1,0 +1,33 @@
+<Application x:Class="Meridian.App"
+       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+       xmlns:utum="using:Uno.Toolkit.UI.Material"
+       RequestedTheme="Light">
+
+  <Application.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries>
+        <!-- Load WinUI resources -->
+        <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
+
+        <!-- Meridian theme resources (loaded before MaterialToolkitTheme so brushes are available) -->
+        <ResourceDictionary Source="ms-appx:///Meridian/Themes/FontResources.xaml" />
+        <ResourceDictionary Source="ms-appx:///Meridian/Themes/TextBlockStyles.xaml" />
+        <ResourceDictionary Source="ms-appx:///Meridian/Themes/CardStyles.xaml" />
+
+        <!-- Material theme with Meridian color overrides and Outfit as default font -->
+        <utum:MaterialToolkitTheme
+          ColorOverrideSource="ms-appx:///Meridian/Themes/ColorPaletteOverride.xaml">
+          <utum:MaterialToolkitTheme.FontOverrideDictionary>
+            <ResourceDictionary>
+              <FontFamily x:Key="MaterialLightFontFamily">ms-appx:///Meridian/Assets/Fonts/Outfit/Outfit-VariableFont_wght.ttf#Outfit</FontFamily>
+              <FontFamily x:Key="MaterialRegularFontFamily">ms-appx:///Meridian/Assets/Fonts/Outfit/Outfit-VariableFont_wght.ttf#Outfit</FontFamily>
+              <FontFamily x:Key="MaterialMediumFontFamily">ms-appx:///Meridian/Assets/Fonts/Outfit/Outfit-VariableFont_wght.ttf#Outfit</FontFamily>
+            </ResourceDictionary>
+          </utum:MaterialToolkitTheme.FontOverrideDictionary>
+        </utum:MaterialToolkitTheme>
+      </ResourceDictionary.MergedDictionaries>
+    </ResourceDictionary>
+  </Application.Resources>
+
+</Application>

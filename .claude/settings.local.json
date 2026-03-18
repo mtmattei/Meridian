@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "env": {
+    "DOTNET_ENVIRONMENT": "Development"
+  },
+  "permissions": {
+    "allow": [
+      "mcp__uno__uno_platform_agent_rules_init",
+      "mcp__uno__uno_platform_usage_rules_init",
+      "mcp__uno__uno_platform_docs_search",
+      "mcp__uno__uno_platform_docs_fetch",
+      "Bash(cmd /c \"set __COMPAT_LAYER=RUNASINVOKER && uno-check --target desktop --target web --ci --non-interactive\" 2>&1)",
+      "Bash('FONTS_DIR=C:/Users/Platform006/OneDrive - Uno Platform/Desktop/unOS/AI-builds/Meridian/Meridian/Assets/Fonts')",
+      "Read(//c/Users/Platform006/OneDrive - Uno Platform/Desktop/unOS/AI-builds/Meridian/**)",
+      "Bash(xxd)",
+      "WebFetch(domain:www.nuget.org)",
+      "WebFetch(domain:livecharts.dev)"
+    ]
+  }
+}
