@@ -13,6 +13,10 @@ public partial record DashboardModel(IMarketDataService MarketData)
     public IListFeed<NewsItem> News => ListFeed.Async(MarketData.GetNewsAsync);
     public IFeed<IImmutableList<ChartPoint>> PortfolioHistory => Feed.Async(MarketData.GetPortfolioHistoryAsync);
 
+    // Index tickers (sync → async wrapper)
+    public IListFeed<IndexTicker> IndexTickers =>
+        ListFeed.Async(async ct => MarketData.GetIndexTickers());
+
     // Editable states (empty string = "none" sentinel)
     public IState<string> SelectedTimeframe => State.Value(this, () => "3M");
     public IState<string> ChartTicker => State.Value(this, () => "");

@@ -12,6 +12,8 @@ public partial class App : Application
         this.InitializeComponent();
     }
 
+    public static IServiceProvider Services { get; private set; } = null!;
+
     protected Window? MainWindow { get; private set; }
     protected IHost? Host { get; private set; }
 
@@ -45,6 +47,7 @@ public partial class App : Application
         MainWindow.SetWindowIcon();
 
         Host = builder.Build();
+        Services = Host.Services;
 
         if (MainWindow.Content is not Frame rootFrame)
         {

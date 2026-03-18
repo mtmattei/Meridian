@@ -1,3 +1,6 @@
+using Meridian.Presentation;
+using Meridian.Services;
+
 namespace Meridian.Views;
 
 public sealed partial class DashboardPage : Page
@@ -7,6 +10,10 @@ public sealed partial class DashboardPage : Page
     public DashboardPage()
     {
         this.InitializeComponent();
+
+        // Wire MVUX DataContext — DashboardViewModel is source-generated from DashboardModel
+        var marketData = App.Services.GetRequiredService<IMarketDataService>();
+        DataContext = new Presentation.DashboardViewModel(marketData);
 
         // Live clock — 1s interval
         _clockTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
