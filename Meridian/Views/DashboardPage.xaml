@@ -1,0 +1,380 @@
+<Page x:Class="Meridian.Views.DashboardPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:utu="using:Uno.Toolkit.UI"
+      Background="{StaticResource MeridianBackgroundBrush}">
+
+    <ScrollViewer>
+        <Grid MaxWidth="1400" HorizontalAlignment="Center" Padding="32,20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <!-- ═══════════ ROW 0: HEADER ═══════════ -->
+            <Grid Grid.Row="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Logo + Title -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal"
+                            Spacing="12" VerticalAlignment="Center">
+                    <TextBlock Text="Meridian"
+                               FontFamily="{StaticResource InstrumentSerifItalicFont}"
+                               FontSize="26"
+                               Foreground="{StaticResource MeridianTextPrimaryBrush}" />
+                    <TextBlock Text="CAPITAL TERMINAL"
+                               FontFamily="{StaticResource OutfitFont}"
+                               FontSize="10" FontWeight="Medium"
+                               Foreground="{StaticResource MeridianTextSubtleBrush}"
+                               CharacterSpacing="120"
+                               VerticalAlignment="Center" />
+                </StackPanel>
+
+                <!-- Market Status + Clock -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal"
+                            Spacing="20" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <!-- Braille spinner placeholder (P8) -->
+                        <TextBlock Text="⠋"
+                                   FontSize="14"
+                                   Foreground="{StaticResource MeridianGainBrush}"
+                                   x:Name="BrailleSpinner" />
+                        <TextBlock Text="NYSE Open"
+                                   FontSize="11" FontWeight="Medium"
+                                   Foreground="{StaticResource MeridianTextMutedBrush}" />
+                    </StackPanel>
+                    <Border Width="1" Height="14"
+                            Background="{StaticResource MeridianBorderBrush}" />
+                    <TextBlock x:Name="ClockText"
+                               FontFamily="{StaticResource IBMPlexMonoFont}"
+                               FontSize="12"
+                               Foreground="{StaticResource MeridianTextMutedBrush}" />
+                </StackPanel>
+            </Grid>
+
+            <!-- ═══════════ ROW 1: BRAILLE TICKER TAPE ═══════════ -->
+            <Border Grid.Row="1" Margin="0,14,0,22"
+                    Padding="0,8"
+                    BorderThickness="0,1"
+                    BorderBrush="{StaticResource MeridianBorderBrush}">
+                <!-- Ticker tape placeholder (P8) -->
+                <TextBlock Text="⣤⣴⣶⣷ AAPL 247.63 +1.40% │ ⣴⣶⣷ NVDA 892.14 −1.42% │ ⣤⣴ MSFT 468.21 +1.12% │ ⣤⣶⣷⣿ GOOGL 142.58 −0.86% │ ⣴⣶⣷ META 350.42 +2.50%"
+                           FontFamily="{StaticResource IBMPlexMonoFont}"
+                           FontSize="11"
+                           Foreground="{StaticResource MeridianTextSubtleBrush}"
+                           TextTrimming="CharacterEllipsis"
+                           MaxLines="1" />
+            </Border>
+
+            <!-- ═══════════ ROW 2: PORTFOLIO HERO ═══════════ -->
+            <Grid Grid.Row="2" Margin="0,0,0,24">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Left: Portfolio Value -->
+                <StackPanel Grid.Column="0" Spacing="8">
+                    <TextBlock Style="{StaticResource SectionLabel}"
+                               Text="TOTAL PORTFOLIO VALUE"
+                               CharacterSpacing="140" />
+
+                    <!-- Portfolio value (Odometer placeholder — P8) -->
+                    <TextBlock Text="$163,842.56"
+                               FontFamily="{StaticResource InstrumentSerifFont}"
+                               FontSize="62"
+                               Foreground="{StaticResource MeridianTextPrimaryBrush}"
+                               LineHeight="68" />
+
+                    <!-- Gain Pill -->
+                    <StackPanel Orientation="Horizontal" Spacing="14" Margin="0,4,0,0">
+                        <Border CornerRadius="100"
+                                Background="{StaticResource MeridianGainBgTintBrush}"
+                                Padding="14,6">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <Viewbox Width="10" Height="10" VerticalAlignment="Center">
+                                    <Polygon Points="5,0 10,8 0,8"
+                                             Fill="{StaticResource MeridianGainBrush}" />
+                                </Viewbox>
+                                <TextBlock FontFamily="{StaticResource IBMPlexMonoMediumFont}"
+                                           FontSize="14"
+                                           Foreground="{StaticResource MeridianGainBrush}"
+                                           Text="+$40,274.28" />
+                                <TextBlock FontFamily="{StaticResource IBMPlexMonoMediumFont}"
+                                           FontSize="13" Opacity="0.7"
+                                           Foreground="{StaticResource MeridianGainBrush}"
+                                           Text="(32.63%)" />
+                            </StackPanel>
+                        </Border>
+                        <TextBlock Text="all time unrealized"
+                                   FontSize="11" FontWeight="Medium"
+                                   Foreground="{StaticResource MeridianTextSubtleBrush}"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Right: Index Cards -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6"
+                            VerticalAlignment="Top">
+                    <!-- S&P 500 -->
+                    <Border CornerRadius="12" BorderThickness="1"
+                            BorderBrush="{StaticResource MeridianBorderBrush}"
+                            Background="{StaticResource MeridianCardBrush}"
+                            Padding="16,10" MinWidth="120">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="S&amp;P 500" FontSize="10" FontWeight="SemiBold"
+                                       Foreground="{StaticResource MeridianTextSubtleBrush}"
+                                       CharacterSpacing="60" />
+                            <TextBlock Text="5,892"
+                                       FontFamily="{StaticResource IBMPlexMonoMediumFont}"
+                                       FontSize="14" />
+                            <TextBlock Text="+0.87%"
+                                       FontFamily="{StaticResource IBMPlexMonoMediumFont}"
+                                       FontSize="11"
+                                       Foreground="{StaticResource MeridianGainBrush}" />
+                        </StackPanel>
+                    </Border>
+                    <!-- NASDAQ -->
+                    <Border CornerRadius="12" BorderThickness="1"
+                            BorderBrush="{StaticResource MeridianBorderBrush}"
+                            Background="{StaticResource MeridianCardBrush}"
+                            Padding="16,10" MinWidth="120">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="NASDAQ" FontSize="10" FontWeight="SemiBold"
+                                       Foreground="{StaticResource MeridianTextSubtleBrush}"
+                                       CharacterSpacing="60" />
+                            <TextBlock Text="18,742"
+                                       FontFamily="{StaticResource IBMPlexMonoMediumFont}"
+                                       FontSize="14" />
+                            <TextBlock Text="+1.12%"
+                                       FontFamily="{StaticResource IBMPlexMonoMediumFont}"
+                                       FontSize="11"
+                                       Foreground="{StaticResource MeridianGainBrush}" />
+                        </StackPanel>
+                    </Border>
+                    <!-- DOW 30 -->
+                    <Border CornerRadius="12" BorderThickness="1"
+                            BorderBrush="{StaticResource MeridianBorderBrush}"
+                            Background="{StaticResource MeridianCardBrush}"
+                            Padding="16,10" MinWidth="120">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="DOW 30" FontSize="10" FontWeight="SemiBold"
+                                       Foreground="{StaticResource MeridianTextSubtleBrush}"
+                                       CharacterSpacing="60" />
+                            <TextBlock Text="43,218"
+                                       FontFamily="{StaticResource IBMPlexMonoMediumFont}"
+                                       FontSize="14" />
+                            <TextBlock Text="+0.34%"
+                                       FontFamily="{StaticResource IBMPlexMonoMediumFont}"
+                                       FontSize="11"
+                                       Foreground="{StaticResource MeridianGainBrush}" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Grid>
+
+            <!-- ═══════════ ROW 3: MAIN CONTENT GRID ═══════════ -->
+            <Grid Grid.Row="3">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="20" />
+                    <ColumnDefinition Width="360" />
+                </Grid.ColumnDefinitions>
+
+                <!-- ─── LEFT COLUMN ─── -->
+                <StackPanel Grid.Column="0" Spacing="20">
+
+                    <!-- PERFORMANCE CHART CARD -->
+                    <Border CornerRadius="16" BorderThickness="1"
+                            BorderBrush="{StaticResource MeridianBorderBrush}"
+                            Background="{StaticResource MeridianCardBrush}"
+                            Padding="28,24,28,16">
+                        <StackPanel Spacing="16">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Style="{StaticResource SectionLabel}"
+                                           Text="PERFORMANCE" />
+
+                                <!-- Timeframe selector -->
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="2">
+                                    <Button Content="1D" FontSize="10" Padding="8,4" CornerRadius="6"
+                                            Background="Transparent" Foreground="{StaticResource MeridianTextSubtleBrush}" />
+                                    <Button Content="1W" FontSize="10" Padding="8,4" CornerRadius="6"
+                                            Background="Transparent" Foreground="{StaticResource MeridianTextSubtleBrush}" />
+                                    <Button Content="1M" FontSize="10" Padding="8,4" CornerRadius="6"
+                                            Background="Transparent" Foreground="{StaticResource MeridianTextSubtleBrush}" />
+                                    <Button Content="3M" FontSize="10" Padding="8,4" CornerRadius="6"
+                                            Background="{StaticResource MeridianGainBgTintBrush}"
+                                            Foreground="{StaticResource MeridianGainBrush}" />
+                                    <Button Content="YTD" FontSize="10" Padding="8,4" CornerRadius="6"
+                                            Background="Transparent" Foreground="{StaticResource MeridianTextSubtleBrush}" />
+                                    <Button Content="1Y" FontSize="10" Padding="8,4" CornerRadius="6"
+                                            Background="Transparent" Foreground="{StaticResource MeridianTextSubtleBrush}" />
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Chart placeholder (P3: LiveCharts2) -->
+                            <Border Height="240" CornerRadius="8"
+                                    Background="{StaticResource MeridianBackgroundBrush}">
+                                <TextBlock Text="Chart area — LiveCharts2 (P3)"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           FontSize="13"
+                                           Foreground="{StaticResource MeridianTextSubtleBrush}" />
+                            </Border>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- HOLDINGS + ALLOCATION ROW -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="20" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Holdings Card -->
+                        <Border Grid.Column="0" CornerRadius="16" BorderThickness="1"
+                                BorderBrush="{StaticResource MeridianBorderBrush}"
+                                Background="{StaticResource MeridianCardBrush}"
+                                Padding="24,22">
+                            <StackPanel Spacing="16">
+                                <TextBlock Style="{StaticResource SectionLabel}"
+                                           Text="HOLDINGS" />
+                                <!-- Holdings list placeholder (P2) -->
+                                <TextBlock Text="6 holdings — data templates in P2"
+                                           FontSize="12"
+                                           Foreground="{StaticResource MeridianTextSubtleBrush}" />
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Allocation + Volume Stack -->
+                        <StackPanel Grid.Column="2" Spacing="20">
+
+                            <!-- Sector Allocation Card -->
+                            <Border CornerRadius="16" BorderThickness="1"
+                                    BorderBrush="{StaticResource MeridianBorderBrush}"
+                                    Background="{StaticResource MeridianCardBrush}"
+                                    Padding="24,22">
+                                <StackPanel Spacing="14">
+                                    <TextBlock Style="{StaticResource SectionLabel}"
+                                               Text="SECTOR ALLOCATION" />
+                                    <!-- Sector ring placeholder (P6) -->
+                                    <Border Height="180" CornerRadius="8"
+                                            Background="{StaticResource MeridianBackgroundBrush}">
+                                        <TextBlock Text="Donut chart (P6)"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center"
+                                                   FontSize="12"
+                                                   Foreground="{StaticResource MeridianTextSubtleBrush}" />
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Volume Profile Card -->
+                            <Border CornerRadius="16" BorderThickness="1"
+                                    BorderBrush="{StaticResource MeridianBorderBrush}"
+                                    Background="{StaticResource MeridianCardBrush}"
+                                    Padding="24,22">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Style="{StaticResource SectionLabel}"
+                                               Text="VOLUME PROFILE" />
+                                    <!-- Volume chart placeholder (P6) -->
+                                    <Border Height="140" CornerRadius="8"
+                                            Background="{StaticResource MeridianBackgroundBrush}">
+                                        <TextBlock Text="Volume bars (P6)"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center"
+                                                   FontSize="12"
+                                                   Foreground="{StaticResource MeridianTextSubtleBrush}" />
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+
+                <!-- ─── RIGHT SIDEBAR ─── -->
+                <StackPanel Grid.Column="2" Spacing="20">
+
+                    <!-- Search Bar -->
+                    <TextBox PlaceholderText="Search ticker or name…"
+                             FontFamily="{StaticResource OutfitFont}"
+                             FontSize="13"
+                             CornerRadius="12"
+                             Padding="16,10" />
+
+                    <!-- Watchlist Card -->
+                    <Border CornerRadius="16" BorderThickness="1"
+                            BorderBrush="{StaticResource MeridianBorderBrush}"
+                            Background="{StaticResource MeridianCardBrush}">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource SectionLabel}"
+                                       Text="WATCHLIST"
+                                       Margin="22,20,22,12" />
+                            <!-- Watchlist rows placeholder (P2) -->
+                            <TextBlock Text="8 stocks — expandable rows in P2/P5"
+                                       FontSize="12" Margin="22,0,22,20"
+                                       Foreground="{StaticResource MeridianTextSubtleBrush}" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Market Pulse (News) Card -->
+                    <Border CornerRadius="16" BorderThickness="1"
+                            BorderBrush="{StaticResource MeridianBorderBrush}"
+                            Background="{StaticResource MeridianCardBrush}"
+                            Padding="22,20,22,16">
+                        <StackPanel Spacing="14">
+                            <TextBlock Style="{StaticResource SectionLabel}"
+                                       Text="MARKET PULSE" />
+                            <!-- News items placeholder (P2) -->
+                            <TextBlock Text="4 news items — data templates in P2"
+                                       FontSize="12"
+                                       Foreground="{StaticResource MeridianTextSubtleBrush}" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Grid>
+
+            <!-- ═══════════ ROW 4: FOOTER ═══════════ -->
+            <Grid Grid.Row="4" Margin="0,24,0,0"
+                  Padding="0,16,0,0"
+                  BorderThickness="0,1,0,0"
+                  BorderBrush="{StaticResource MeridianBorderBrush}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0" FontSize="10"
+                           Foreground="{StaticResource MeridianTextSubtleBrush}"
+                           Text="Simulated data for demonstration. Not financial advice." />
+                <!-- Compact ticker placeholder (P8) -->
+                <TextBlock Grid.Column="1"
+                           Text="⣤⣴⣶⣷⣿⣶⣴⣤ AAPL ⣤⣴⣶"
+                           FontFamily="{StaticResource IBMPlexMonoFont}"
+                           FontSize="9" Opacity="0.4"
+                           HorizontalAlignment="Center"
+                           Foreground="{StaticResource MeridianTextSubtleBrush}"
+                           MaxWidth="300" />
+                <TextBlock Grid.Column="2"
+                           FontFamily="{StaticResource IBMPlexMonoFont}"
+                           FontSize="10"
+                           Foreground="{StaticResource MeridianTextSubtleBrush}"
+                           Text="Meridian Terminal v4.0" />
+            </Grid>
+        </Grid>
+    </ScrollViewer>
+</Page>

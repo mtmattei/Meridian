@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using Meridian.Services;
+using Meridian.Views;
 using Uno.Resizetizer;
 
 namespace Meridian;
@@ -53,7 +54,7 @@ public partial class App : Application
 
         if (rootFrame.Content == null)
         {
-            rootFrame.Navigate(typeof(MainPage), args.Arguments);
+            rootFrame.Navigate(typeof(DashboardPage), args.Arguments);
         }
 
         MainWindow.Activate();
