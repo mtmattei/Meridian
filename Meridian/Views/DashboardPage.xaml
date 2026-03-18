@@ -8,6 +8,7 @@
     <Page.Resources>
         <converters:TagToBrushConverter x:Key="TagToBrush" />
         <converters:GainLossBrushConverter x:Key="GainLossBrush" />
+        <converters:DecimalFormatConverter x:Key="DecimalFormat" />
     </Page.Resources>
 
     <ScrollViewer>
@@ -240,7 +241,7 @@
                                                                FontFamily="{StaticResource IBMPlexMonoFont}"
                                                                FontSize="13"
                                                                HorizontalAlignment="Right"
-                                                               Text="{Binding MarketValue}" />
+                                                               Text="{Binding MarketValue, Converter={StaticResource DecimalFormat}, ConverterParameter='$#,##0.00'}" />
 
                                                     <!-- Shares × Avg -->
                                                     <TextBlock Grid.Row="1" Grid.Column="0"
@@ -257,7 +258,7 @@
                                                                HorizontalAlignment="Right"
                                                                Foreground="{Binding IsPositive, Converter={StaticResource GainLossBrush}}"
                                                                Margin="0,2,0,0"
-                                                               Text="{Binding GainPct}" />
+                                                               Text="{Binding GainPct, Converter={StaticResource DecimalFormat}, ConverterParameter='+0.00;-0.00;0.00'}" />
                                                 </Grid>
                                             </Border>
                                         </DataTemplate>

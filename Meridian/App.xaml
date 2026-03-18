@@ -11,18 +11,18 @@
         <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
 
         <!-- Meridian theme resources (loaded before MaterialToolkitTheme so brushes are available) -->
-        <ResourceDictionary Source="ms-appx:///Meridian/Themes/FontResources.xaml" />
-        <ResourceDictionary Source="ms-appx:///Meridian/Themes/TextBlockStyles.xaml" />
-        <ResourceDictionary Source="ms-appx:///Meridian/Themes/CardStyles.xaml" />
+        <ResourceDictionary Source="ms-appx:///Themes/FontResources.xaml" />
+        <ResourceDictionary Source="ms-appx:///Themes/TextBlockStyles.xaml" />
+        <ResourceDictionary Source="ms-appx:///Themes/CardStyles.xaml" />
 
         <!-- Material theme with Meridian color overrides and Outfit as default font -->
         <utum:MaterialToolkitTheme
-          ColorOverrideSource="ms-appx:///Meridian/Themes/ColorPaletteOverride.xaml">
+          ColorOverrideSource="ms-appx:///Themes/ColorPaletteOverride.xaml">
           <utum:MaterialToolkitTheme.FontOverrideDictionary>
             <ResourceDictionary>
-              <FontFamily x:Key="MaterialLightFontFamily">ms-appx:///Meridian/Assets/Fonts/Outfit/Outfit-VariableFont_wght.ttf#Outfit</FontFamily>
-              <FontFamily x:Key="MaterialRegularFontFamily">ms-appx:///Meridian/Assets/Fonts/Outfit/Outfit-VariableFont_wght.ttf#Outfit</FontFamily>
-              <FontFamily x:Key="MaterialMediumFontFamily">ms-appx:///Meridian/Assets/Fonts/Outfit/Outfit-VariableFont_wght.ttf#Outfit</FontFamily>
+              <FontFamily x:Key="MaterialLightFontFamily">ms-appx:///Assets/Fonts/Outfit/Outfit-VariableFont_wght.ttf#Outfit</FontFamily>
+              <FontFamily x:Key="MaterialRegularFontFamily">ms-appx:///Assets/Fonts/Outfit/Outfit-VariableFont_wght.ttf#Outfit</FontFamily>
+              <FontFamily x:Key="MaterialMediumFontFamily">ms-appx:///Assets/Fonts/Outfit/Outfit-VariableFont_wght.ttf#Outfit</FontFamily>
             </ResourceDictionary>
           </utum:MaterialToolkitTheme.FontOverrideDictionary>
         </utum:MaterialToolkitTheme>
