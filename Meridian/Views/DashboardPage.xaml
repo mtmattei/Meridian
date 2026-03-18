@@ -3,6 +3,7 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:utu="using:Uno.Toolkit.UI"
       xmlns:lvc="using:LiveChartsCore.SkiaSharpView.WinUI"
+      xmlns:controls="using:Meridian.Controls"
       xmlns:converters="using:Meridian.Presentation"
       Background="{StaticResource MeridianBackgroundBrush}">
 
@@ -314,12 +315,9 @@
                                 <StackPanel Spacing="14">
                                     <TextBlock Style="{StaticResource SectionLabel}"
                                                Text="SECTOR ALLOCATION" />
-                                    <Border Height="180" CornerRadius="8"
-                                            Background="{StaticResource MeridianBackgroundBrush}">
-                                        <TextBlock Text="Donut chart (P6)"
-                                                   HorizontalAlignment="Center" VerticalAlignment="Center"
-                                                   FontSize="12" Foreground="{StaticResource MeridianTextSubtleBrush}" />
-                                    </Border>
+                                    <controls:SectorRingControl
+                                        x:Name="SectorRing"
+                                        Sectors="{Binding Sectors}" />
                                 </StackPanel>
                             </Border>
                             <Border CornerRadius="16" BorderThickness="1"
@@ -329,12 +327,9 @@
                                 <StackPanel Spacing="8">
                                     <TextBlock Style="{StaticResource SectionLabel}"
                                                Text="VOLUME PROFILE" />
-                                    <Border Height="140" CornerRadius="8"
-                                            Background="{StaticResource MeridianBackgroundBrush}">
-                                        <TextBlock Text="Volume bars (P6)"
-                                                   HorizontalAlignment="Center" VerticalAlignment="Center"
-                                                   FontSize="12" Foreground="{StaticResource MeridianTextSubtleBrush}" />
-                                    </Border>
+                                    <controls:VolumeChartControl
+                                        x:Name="VolumeChart"
+                                        VolumeData="{Binding Volume}" />
                                 </StackPanel>
                             </Border>
                         </StackPanel>
@@ -364,45 +359,119 @@
                                 </ItemsRepeater.Layout>
                                 <ItemsRepeater.ItemTemplate>
                                     <DataTemplate>
-                                        <Border Padding="14,12,22,12"
-                                                BorderThickness="0,0,0,1"
-                                                BorderBrush="#06000000">
-                                            <Grid>
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="Auto" />
-                                                    <ColumnDefinition Width="*" />
-                                                    <ColumnDefinition Width="Auto" />
-                                                </Grid.ColumnDefinitions>
+                                        <StackPanel>
+                                            <!-- Collapsed row -->
+                                            <Border Padding="14,12,22,12"
+                                                    BorderThickness="0,0,0,1"
+                                                    BorderBrush="#06000000"
+                                                    Tapped="OnWatchlistRowTapped">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
 
-                                                <!-- Ticker + Name -->
-                                                <StackPanel Grid.Column="0" Orientation="Horizontal"
-                                                            Spacing="8" VerticalAlignment="Center"
-                                                            Margin="8,0,0,0">
-                                                    <TextBlock Text="{Binding Ticker}"
-                                                               FontSize="14" FontWeight="Bold"
-                                                               FontFamily="{StaticResource OutfitFont}" />
-                                                    <TextBlock Text="{Binding Name}"
-                                                               FontSize="11"
-                                                               Foreground="{StaticResource MeridianTextSubtleBrush}"
-                                                               VerticalAlignment="Center" />
-                                                </StackPanel>
+                                                    <StackPanel Grid.Column="0" Orientation="Horizontal"
+                                                                Spacing="8" VerticalAlignment="Center"
+                                                                Margin="8,0,0,0">
+                                                        <TextBlock Text="{Binding Ticker}"
+                                                                   FontSize="14" FontWeight="Bold"
+                                                                   FontFamily="{StaticResource OutfitFont}" />
+                                                        <!-- Chevron -->
+                                                        <TextBlock Text="▾" FontSize="8"
+                                                                   Foreground="{StaticResource MeridianTextSubtleBrush}"
+                                                                   VerticalAlignment="Center" />
+                                                        <TextBlock Text="{Binding Name}" FontSize="11"
+                                                                   Foreground="{StaticResource MeridianTextSubtleBrush}"
+                                                                   VerticalAlignment="Center" />
+                                                    </StackPanel>
 
-                                                <!-- Price + Delta -->
-                                                <StackPanel Grid.Column="2" HorizontalAlignment="Right"
-                                                            VerticalAlignment="Center">
-                                                    <TextBlock FontFamily="{StaticResource IBMPlexMonoFont}"
-                                                               FontSize="13" HorizontalAlignment="Right">
-                                                        <Run Text="$" /><Run Text="{Binding Price}" />
-                                                    </TextBlock>
-                                                    <TextBlock FontFamily="{StaticResource IBMPlexMonoFont}"
-                                                               FontSize="11"
-                                                               HorizontalAlignment="Right"
-                                                               Foreground="{Binding Pct, Converter={StaticResource GainLossBrush}}">
-                                                        <Run Text="{Binding Pct}" /><Run Text="%" />
-                                                    </TextBlock>
+                                                    <StackPanel Grid.Column="2" HorizontalAlignment="Right"
+                                                                VerticalAlignment="Center">
+                                                        <TextBlock FontFamily="{StaticResource IBMPlexMonoFont}"
+                                                                   FontSize="13" HorizontalAlignment="Right">
+                                                            <Run Text="$" /><Run Text="{Binding Price}" />
+                                                        </TextBlock>
+                                                        <TextBlock FontFamily="{StaticResource IBMPlexMonoFont}"
+                                                                   FontSize="11" HorizontalAlignment="Right"
+                                                                   Foreground="{Binding Pct, Converter={StaticResource GainLossBrush}}">
+                                                            <Run Text="{Binding Pct}" /><Run Text="%" />
+                                                        </TextBlock>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Border>
+
+                                            <!-- Expanded panel (hidden by default) -->
+                                            <Border Tag="ExpandedPanel" Visibility="Collapsed"
+                                                    Background="{StaticResource MeridianExpandedBgBrush}"
+                                                    Padding="22,14">
+                                                <StackPanel Spacing="12">
+                                                    <!-- OHLC Grid -->
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="*" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <Grid.RowDefinitions>
+                                                            <RowDefinition Height="Auto" />
+                                                            <RowDefinition Height="Auto" />
+                                                        </Grid.RowDefinitions>
+                                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="OPEN"
+                                                                   FontSize="9" Foreground="{StaticResource MeridianTextSubtleBrush}" />
+                                                        <TextBlock Grid.Row="0" Grid.Column="1" Text="HIGH"
+                                                                   FontSize="9" Foreground="{StaticResource MeridianTextSubtleBrush}" />
+                                                        <TextBlock Grid.Row="0" Grid.Column="2" Text="LOW"
+                                                                   FontSize="9" Foreground="{StaticResource MeridianTextSubtleBrush}" />
+                                                        <TextBlock Grid.Row="0" Grid.Column="3" Text="VOLUME"
+                                                                   FontSize="9" Foreground="{StaticResource MeridianTextSubtleBrush}" />
+                                                        <TextBlock Grid.Row="1" Grid.Column="0"
+                                                                   FontFamily="{StaticResource IBMPlexMonoFont}" FontSize="13"
+                                                                   Text="{Binding Open, Converter={StaticResource DecimalFormat}, ConverterParameter='$#,##0.00'}" />
+                                                        <TextBlock Grid.Row="1" Grid.Column="1"
+                                                                   FontFamily="{StaticResource IBMPlexMonoFont}" FontSize="13"
+                                                                   Text="{Binding High, Converter={StaticResource DecimalFormat}, ConverterParameter='$#,##0.00'}" />
+                                                        <TextBlock Grid.Row="1" Grid.Column="2"
+                                                                   FontFamily="{StaticResource IBMPlexMonoFont}" FontSize="13"
+                                                                   Text="{Binding Low, Converter={StaticResource DecimalFormat}, ConverterParameter='$#,##0.00'}" />
+                                                        <TextBlock Grid.Row="1" Grid.Column="3"
+                                                                   FontFamily="{StaticResource IBMPlexMonoFont}" FontSize="13"
+                                                                   Text="{Binding Volume}" />
+                                                    </Grid>
+
+                                                    <!-- Day Range Bar -->
+                                                    <StackPanel Spacing="4">
+                                                        <Grid>
+                                                            <TextBlock Text="Day Range" FontSize="9"
+                                                                       Foreground="{StaticResource MeridianTextSubtleBrush}" />
+                                                            <TextBlock HorizontalAlignment="Right" FontSize="9"
+                                                                       FontFamily="{StaticResource IBMPlexMonoFont}"
+                                                                       Foreground="{StaticResource MeridianTextSubtleBrush}">
+                                                                <Run Text="$" /><Run Text="{Binding Low}" /><Run Text=" — $" /><Run Text="{Binding High}" />
+                                                            </TextBlock>
+                                                        </Grid>
+                                                        <Border Height="4" CornerRadius="2"
+                                                                Background="{StaticResource MeridianBorderBrush}" />
+                                                    </StackPanel>
+
+                                                    <!-- Action buttons -->
+                                                    <StackPanel Orientation="Horizontal" Spacing="10">
+                                                        <Button Content="View Chart" FontSize="11" Padding="14,6"
+                                                                CornerRadius="8" BorderThickness="1"
+                                                                BorderBrush="{StaticResource MeridianBorderBrush}"
+                                                                Background="Transparent"
+                                                                Tapped="OnViewChartFromWatchlist" />
+                                                        <Button Content="Trade" FontSize="11" Padding="14,6"
+                                                                CornerRadius="8" BorderThickness="1"
+                                                                BorderBrush="{StaticResource MeridianAccentBrush}"
+                                                                Foreground="{StaticResource MeridianAccentBrush}"
+                                                                Background="{StaticResource MeridianAccentBgTintBrush}" />
+                                                    </StackPanel>
                                                 </StackPanel>
-                                            </Grid>
-                                        </Border>
+                                            </Border>
+                                        </StackPanel>
                                     </DataTemplate>
                                 </ItemsRepeater.ItemTemplate>
                             </ItemsRepeater>

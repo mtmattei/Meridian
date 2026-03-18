@@ -13,6 +13,7 @@ public sealed partial class DashboardPage : Page
     private readonly DispatcherTimer _clockTimer;
     private readonly IMarketDataService _marketData;
     private string? _currentChartTicker;
+    private Border? _currentExpandedPanel;
 
     private static readonly SKColor GainColor = SKColor.Parse("#2D6A4F");
     private static readonly SKColor LossColor = SKColor.Parse("#B5342B");
@@ -133,6 +134,68 @@ public sealed partial class DashboardPage : Page
     private async void OnBackButtonClick(object sender, RoutedEventArgs e)
     {
         await LoadChartAsync(null);
+    }
+
+    private void OnWatchlistRowTapped(object sender, TappedRoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement tappedRow) return;
+
+        // Find the parent StackPanel that contains both the row and the expanded panel
+        var parent = tappedRow.Parent as StackPanel;
+        if (parent is null) return;
+
+        // Find the expanded panel (tagged "ExpandedPanel")
+        Border? expandedPanel = null;
+        foreach (var child in parent.Children)
+        {
+            if (child is Border b && b.Tag as string == "ExpandedPanel")
+            {
+                expandedPanel = b;
+                break;
+            }
+        }
+
+        if (expandedPanel is null) return;
+
+        // Collapse previously expanded panel
+        if (_currentExpandedPanel != null && _currentExpandedPanel != expandedPanel)
+        {
+            _currentExpandedPanel.Visibility = Visibility.Collapsed;
+        }
+
+        // Toggle current panel
+        if (expandedPanel.Visibility == Visibility.Visible)
+        {
+            expandedPanel.Visibility = Visibility.Collapsed;
+            _currentExpandedPanel = null;
+        }
+        else
+        {
+            expandedPanel.Visibility = Visibility.Visible;
+            _currentExpandedPanel = expandedPanel;
+        }
+    }
+
+    private async void OnViewChartFromWatchlist(object sender, TappedRoutedEventArgs e)
+    {
+        if (sender is FrameworkElement fe)
+        {
+            // Walk up to find the DataContext with Ticker
+            var parent = fe;
+            while (parent != null)
+            {
+                if (parent.DataContext is object dc)
+                {
+                    var tickerProp = dc.GetType().GetProperty("Ticker");
+                    if (tickerProp?.GetValue(dc) is string ticker && !string.IsNullOrEmpty(ticker))
+                    {
+                        await LoadChartAsync(ticker);
+                        return;
+                    }
+                }
+                parent = parent.Parent as FrameworkElement;
+            }
+        }
     }
 
     private void UpdateClock()
