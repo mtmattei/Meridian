@@ -49,6 +49,9 @@ public partial class App : Application
         Host = builder.Build();
         Services = Host.Services;
 
+        // Set desktop window size for 1400px + padding layout
+        MainWindow.AppWindow.Resize(new Windows.Graphics.SizeInt32 { Width = 1500, Height = 900 });
+
         if (MainWindow.Content is not Frame rootFrame)
         {
             rootFrame = new Frame();
