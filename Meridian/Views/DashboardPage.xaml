@@ -199,10 +199,14 @@
                 </Grid.ColumnDefinitions>
 
                 <!-- ─── LEFT COLUMN ─── -->
-                <StackPanel Grid.Column="0" Spacing="20">
+                <Grid Grid.Column="0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
 
                     <!-- PERFORMANCE CHART CARD -->
-                    <Border CornerRadius="16" BorderThickness="1"
+                    <Border Grid.Row="0" CornerRadius="16" BorderThickness="1"
                             BorderBrush="{StaticResource MeridianBorderBrush}"
                             Background="{StaticResource MeridianCardBrush}"
                             Padding="28,24,28,16"
@@ -237,12 +241,13 @@
                                                     Orientation="Horizontal" Spacing="8" Margin="0,3,0,0">
                                             <TextBlock x:Name="StockPrice"
                                                        FontFamily="{StaticResource IBMPlexMonoMediumFont}"
-                                                       FontSize="18" />
+                                                       FontSize="18" VerticalAlignment="Center" />
                                             <TextBlock x:Name="StockDelta"
                                                        FontFamily="{StaticResource IBMPlexMonoMediumFont}"
                                                        FontSize="12" VerticalAlignment="Center" />
                                             <Button Content="TRADE" FontSize="10" FontWeight="Bold"
-                                                    Padding="12,3" CornerRadius="8" BorderThickness="1"
+                                                    Padding="12,2" CornerRadius="6" BorderThickness="1"
+                                                    Height="24" VerticalAlignment="Center"
                                                     BorderBrush="{StaticResource MeridianAccentBrush}"
                                                     Foreground="{StaticResource MeridianAccentBrush}"
                                                     Background="{StaticResource MeridianAccentBgTintBrush}"
@@ -280,17 +285,26 @@
                                 </StackPanel>
                             </Grid>
 
-                            <!-- LiveCharts2 area chart -->
-                            <lvc:CartesianChart x:Name="PerformanceChart"
-                                                Height="240"
-                                                TooltipPosition="Top"
-                                                ZoomMode="None"
-                                                AutomationProperties.Name="Portfolio performance chart, 3 month view" />
+                            <!-- LiveCharts2 area chart with left-to-right reveal -->
+                            <Grid>
+                                <lvc:CartesianChart x:Name="PerformanceChart"
+                                                    Height="240"
+                                                    TooltipPosition="Top"
+                                                    ZoomMode="None"
+                                                    AutomationProperties.Name="Portfolio performance chart, 3 month view" />
+                                <Border x:Name="ChartRevealMask"
+                                        Background="{StaticResource MeridianCardBrush}"
+                                        IsHitTestVisible="False">
+                                    <Border.RenderTransform>
+                                        <TranslateTransform x:Name="ChartMaskTranslate" />
+                                    </Border.RenderTransform>
+                                </Border>
+                            </Grid>
                         </StackPanel>
                     </Border>
 
                     <!-- HOLDINGS + ALLOCATION ROW -->
-                    <Grid>
+                    <Grid Grid.Row="1" Margin="0,20,0,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="20" />
@@ -374,8 +388,12 @@
                         </Border>
 
                         <!-- Allocation + Volume Stack -->
-                        <StackPanel Grid.Column="2" Spacing="20">
-                            <Border CornerRadius="16" BorderThickness="1"
+                        <Grid Grid.Column="2">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <Border Grid.Row="0" CornerRadius="16" BorderThickness="1"
                                     BorderBrush="{StaticResource MeridianBorderBrush}"
                                     Background="{StaticResource MeridianCardBrush}"
                                     Padding="24,22">
@@ -387,10 +405,11 @@
                                         Sectors="{Binding Sectors}" />
                                 </StackPanel>
                             </Border>
-                            <Border CornerRadius="16" BorderThickness="1"
+                            <Border Grid.Row="1" CornerRadius="16" BorderThickness="1"
                                     BorderBrush="{StaticResource MeridianBorderBrush}"
                                     Background="{StaticResource MeridianCardBrush}"
-                                    Padding="24,22">
+                                    Padding="24,22" Margin="0,20,0,0"
+                                    VerticalAlignment="Bottom">
                                 <StackPanel Spacing="8">
                                     <TextBlock Style="{StaticResource SectionLabel}"
                                                Text="VOLUME PROFILE" />
@@ -399,15 +418,20 @@
                                         VolumeData="{Binding Volume}" />
                                 </StackPanel>
                             </Border>
-                        </StackPanel>
+                        </Grid>
                     </Grid>
-                </StackPanel>
+                </Grid>
 
                 <!-- ─── RIGHT SIDEBAR ─── -->
-                <StackPanel Grid.Column="2" Spacing="20">
+                <Grid Grid.Column="2">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
 
                     <!-- Search Bar -->
-                    <TextBox PlaceholderText="Search ticker or name…"
+                    <TextBox Grid.Row="0" PlaceholderText="Search ticker or name…"
                              Text="{Binding SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                              FontFamily="{StaticResource OutfitFont}"
                              FontSize="13" CornerRadius="12" Padding="12,6"
@@ -417,9 +441,10 @@
                              Height="36" />
 
                     <!-- ══ WATCHLIST CARD ══ -->
-                    <Border CornerRadius="16" BorderThickness="1"
+                    <Border Grid.Row="1" CornerRadius="16" BorderThickness="1"
                             BorderBrush="{StaticResource MeridianBorderBrush}"
-                            Background="{StaticResource MeridianCardBrush}">
+                            Background="{StaticResource MeridianCardBrush}"
+                            Margin="0,20,0,20">
                         <StackPanel>
                             <TextBlock Style="{StaticResource SectionLabel}"
                                        Text="WATCHLIST" Margin="22,20,22,12" />
@@ -571,7 +596,7 @@
                     </Border>
 
                     <!-- ══ MARKET PULSE (NEWS) CARD ══ -->
-                    <Border CornerRadius="16" BorderThickness="1"
+                    <Border Grid.Row="2" CornerRadius="16" BorderThickness="1"
                             BorderBrush="{StaticResource MeridianBorderBrush}"
                             Background="{StaticResource MeridianCardBrush}"
                             Padding="22,20,22,16">
@@ -627,7 +652,7 @@
                             </ItemsRepeater>
                         </StackPanel>
                     </Border>
-                </StackPanel>
+                </Grid>
             </Grid>
 
             <!-- ═══════════ ROW 4: FOOTER ═══════════ -->

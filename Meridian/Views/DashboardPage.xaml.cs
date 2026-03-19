@@ -69,8 +69,8 @@ public sealed partial class DashboardPage : Page
         _clockTimer.Start();
         UpdateClock();
 
-        // Consolidated animation timer — 70ms tick
-        _animationTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(70) };
+        // Consolidated animation timer — 16ms tick (~60fps) for smooth scrolling
+        _animationTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(16) };
         _animationTimer.Tick += OnAnimationTick;
         _animationTimer.Start();
 
@@ -275,20 +275,23 @@ public sealed partial class DashboardPage : Page
 
     private void OnAnimationTick(object? sender, object e)
     {
-        // Modulo reset prevents overflow after ~1.7 days
         _animationFrame = (_animationFrame + 1) % 100_000;
 
-        BrailleSpinner.Text = SpinnerGlyphs[_animationFrame % SpinnerGlyphs.Length];
+        // Smooth ticker scroll every frame
         UpdateTickerScroll();
 
-        if (_animationFrame % 2 == 0)
+        // Slower decorative animations (sub-divided from 60fps tick)
+        if (_animationFrame % 5 == 0)
+            BrailleSpinner.Text = SpinnerGlyphs[(_animationFrame / 5) % SpinnerGlyphs.Length];
+
+        if (_animationFrame % 9 == 0)
             UpdateBraillePulse();
 
-        // Gain pill pulse: 3s cycle (≈43 ticks)
-        var pulseOpacity = 0.85 + 0.15 * Math.Sin((_animationFrame % 43) / 43.0 * Math.PI * 2);
+        // Gain pill pulse: smooth 3s sine wave
+        var pulseOpacity = 0.85 + 0.15 * Math.Sin((_animationFrame % 188) / 188.0 * Math.PI * 2);
         GainPill.Opacity = pulseOpacity;
 
-        if (_animationFrame % 3 == 0)
+        if (_animationFrame % 13 == 0)
             UpdateBrailleActivity();
     }
 
@@ -360,14 +363,14 @@ public sealed partial class DashboardPage : Page
     private void UpdateTickerScroll()
     {
         InitTickerTape();
-        TickerTranslate.X -= 2.3;
+        TickerTranslate.X -= 0.55;
         // Reset when one full segment has scrolled — seamless continuous loop
         var segmentWidth = TickerTapeText.ActualWidth / 3.0;
         if (segmentWidth > 0 && TickerTranslate.X < -segmentWidth)
             TickerTranslate.X += segmentWidth;
 
         // Footer ticker scroll (slower pace)
-        FooterTickerTranslate.X -= 1.0;
+        FooterTickerTranslate.X -= 0.25;
         var footerWidth = FooterTickerText.ActualWidth / 3.0;
         if (footerWidth > 0 && FooterTickerTranslate.X < -footerWidth)
             FooterTickerTranslate.X += footerWidth;
@@ -450,6 +453,7 @@ public sealed partial class DashboardPage : Page
                 new[] { color.WithAlpha(60), color.WithAlpha(5) },
                 new SKPoint(0, 0), new SKPoint(0, 1));
 
+            PerformanceChart.AnimationsSpeed = TimeSpan.FromMilliseconds(1);
             PerformanceChart.Series = new ISeries[]
             {
                 new LineSeries<double>
@@ -502,6 +506,9 @@ public sealed partial class DashboardPage : Page
                 }
             };
 
+            var yRange = values.Max() - values.Min();
+            var yStep = yRange > 0 ? yRange / 5.0 : 1;
+
             PerformanceChart.YAxes = new Axis[]
             {
                 new Axis
@@ -510,6 +517,8 @@ public sealed partial class DashboardPage : Page
                     LabelsPaint = axisLabelPaint,
                     SeparatorsPaint = null,
                     ShowSeparatorLines = false,
+                    MinStep = yStep,
+                    ForceStepToMin = true,
                     Labeler = val => string.IsNullOrEmpty(ticker)
                         ? $"${val / 1000:N0}k"
                         : $"${val:N0}",
@@ -517,11 +526,40 @@ public sealed partial class DashboardPage : Page
             };
 
             UpdateChartHeader(ticker);
+            AnimateChartReveal();
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Chart load error: {ex.Message}");
         }
+    }
+
+    private void AnimateChartReveal()
+    {
+        ChartRevealMask.Visibility = Visibility.Visible;
+        ChartMaskTranslate.X = 0;
+
+        DispatcherQueue.TryEnqueue(async () =>
+        {
+            await Task.Delay(50);
+            var width = PerformanceChart.ActualWidth;
+            if (width <= 0) width = 900;
+
+            var anim = new DoubleAnimation
+            {
+                From = 0,
+                To = width + 20,
+                Duration = new Duration(TimeSpan.FromMilliseconds(1200)),
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseInOut }
+            };
+            Storyboard.SetTarget(anim, ChartRevealMask);
+            Storyboard.SetTargetProperty(anim, "(UIElement.RenderTransform).(TranslateTransform.X)");
+
+            var sb = new Storyboard();
+            sb.Children.Add(anim);
+            sb.Completed += (_, _) => ChartRevealMask.Visibility = Visibility.Collapsed;
+            sb.Begin();
+        });
     }
 
     private async void UpdateChartHeader(string? ticker)
@@ -663,7 +701,7 @@ public sealed partial class DashboardPage : Page
         if (sender is Border b)
         {
             b.BorderBrush = HoverBorderBrush;
-            b.RenderTransform = new TranslateTransform { Y = -2 };
+            b.Background = HoverBgBrush;
         }
     }
 
@@ -672,7 +710,7 @@ public sealed partial class DashboardPage : Page
         if (sender is Border b)
         {
             b.BorderBrush = DefaultBorderBrush;
-            b.RenderTransform = null;
+            b.Background = TransparentBg;
         }
     }
 
