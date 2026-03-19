@@ -390,11 +390,15 @@
                         </Border>
 
                         <!-- Allocation + Volume Stack -->
-                        <StackPanel Grid.Column="2" Spacing="20">
-                            <Border CornerRadius="16" BorderThickness="1"
+                        <Grid Grid.Column="2">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <Border Grid.Row="0" CornerRadius="16" BorderThickness="1"
                                     BorderBrush="{StaticResource MeridianBorderBrush}"
                                     Background="{StaticResource MeridianCardBrush}"
-                                    Padding="24,22" MinHeight="210">
+                                    Padding="24,22" Margin="0,0,0,20">
                                 <StackPanel Spacing="14">
                                     <TextBlock Style="{StaticResource SectionLabel}"
                                                Text="SECTOR ALLOCATION" />
@@ -403,10 +407,10 @@
                                         Sectors="{Binding Sectors}" />
                                 </StackPanel>
                             </Border>
-                            <Border CornerRadius="16" BorderThickness="1"
+                            <Border Grid.Row="1" CornerRadius="16" BorderThickness="1"
                                     BorderBrush="{StaticResource MeridianBorderBrush}"
                                     Background="{StaticResource MeridianCardBrush}"
-                                    Padding="24,22" MinHeight="210">
+                                    Padding="24,22">
                                 <StackPanel Spacing="8">
                                     <TextBlock Style="{StaticResource SectionLabel}"
                                                Text="VOLUME PROFILE" />
@@ -415,7 +419,7 @@
                                         VolumeData="{Binding Volume}" />
                                 </StackPanel>
                             </Border>
-                        </StackPanel>
+                        </Grid>
                     </Grid>
                 </Grid>
 
@@ -428,14 +432,20 @@
                     </Grid.RowDefinitions>
 
                     <!-- Search Bar -->
-                    <TextBox Grid.Row="0" PlaceholderText="Search ticker or name…"
-                             Text="{Binding SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                             FontFamily="{StaticResource OutfitFont}"
-                             FontSize="13" CornerRadius="12" Padding="12,6"
-                             Background="{StaticResource MeridianCardBrush}"
-                             BorderThickness="1"
-                             BorderBrush="{StaticResource MeridianBorderBrush}"
-                             Height="36" />
+                    <Grid Grid.Row="0">
+                        <TextBox PlaceholderText="Search ticker or name…"
+                                 Text="{Binding SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                 FontFamily="{StaticResource OutfitFont}"
+                                 FontSize="13" CornerRadius="12" Padding="32,6,12,6"
+                                 Background="{StaticResource MeridianCardBrush}"
+                                 BorderThickness="1"
+                                 BorderBrush="{StaticResource MeridianBorderBrush}"
+                                 Height="36" />
+                        <FontIcon Glyph="&#xE721;" FontSize="13"
+                                  HorizontalAlignment="Left" VerticalAlignment="Center"
+                                  Margin="11,0,0,0" IsHitTestVisible="False"
+                                  Foreground="{StaticResource MeridianTextSubtleBrush}" />
+                    </Grid>
 
                     <!-- ══ WATCHLIST CARD ══ -->
                     <Border Grid.Row="1" CornerRadius="16" BorderThickness="1"
@@ -563,18 +573,41 @@
                                                                            Text="{Binding High, Converter={StaticResource PrefixSuffix}, ConverterParameter='$|'}" />
                                                             </StackPanel>
                                                         </Grid>
-                                                        <Border Height="4" CornerRadius="2"
-                                                                Background="{StaticResource MeridianBorderBrush}" />
+                                                        <Grid Height="6">
+                                                            <!-- Track background -->
+                                                            <Border CornerRadius="3"
+                                                                    Background="{StaticResource MeridianBorderBrush}" />
+                                                            <!-- Filled portion + indicator -->
+                                                            <Grid>
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="0.55*" />
+                                                                    <ColumnDefinition Width="Auto" />
+                                                                    <ColumnDefinition Width="0.45*" />
+                                                                </Grid.ColumnDefinitions>
+                                                                <Border Grid.Column="0" CornerRadius="3,0,0,3"
+                                                                        Background="{StaticResource MeridianGainBrush}" />
+                                                                <!-- Current price indicator dot -->
+                                                                <Border Grid.Column="1" Width="10" Height="10" CornerRadius="5"
+                                                                        Margin="-5,0,-5,0"
+                                                                        Background="{StaticResource MeridianTextPrimaryBrush}" />
+                                                            </Grid>
+                                                        </Grid>
                                                     </StackPanel>
 
                                                     <!-- Action buttons -->
                                                     <StackPanel Orientation="Horizontal" Spacing="10">
-                                                        <Button Content="View Chart" FontSize="11" Padding="14,6"
+                                                        <Button FontSize="11" Padding="14,6"
                                                                 CornerRadius="8" BorderThickness="1"
                                                                 BorderBrush="{StaticResource MeridianBorderBrush}"
                                                                 Foreground="{StaticResource MeridianTextPrimaryBrush}"
                                                                 Background="Transparent"
-                                                                Tapped="OnViewChartFromWatchlist" />
+                                                                Tapped="OnViewChartFromWatchlist">
+                                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                                <FontIcon Glyph="&#xE9D9;" FontSize="12" />
+                                                                <TextBlock Text="View Chart" FontSize="11"
+                                                                           VerticalAlignment="Center" />
+                                                            </StackPanel>
+                                                        </Button>
                                                         <Button Content="Trade" FontSize="11" Padding="14,6"
                                                                 CornerRadius="8" BorderThickness="1"
                                                                 BorderBrush="{StaticResource MeridianAccentBrush}"

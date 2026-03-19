@@ -556,26 +556,41 @@ public sealed partial class DashboardPage : Page
     private void AnimateChartReveal()
     {
         ChartRevealMask.Visibility = Visibility.Visible;
+        ChartRevealMask.Opacity = 1;
         ChartMaskTranslate.X = 0;
 
         DispatcherQueue.TryEnqueue(async () =>
         {
-            await Task.Delay(50);
+            await Task.Delay(80);
             var width = PerformanceChart.ActualWidth;
             if (width <= 0) width = 900;
 
-            var anim = new DoubleAnimation
+            // Slide mask right to reveal chart left-to-right
+            var slideAnim = new DoubleAnimation
             {
                 From = 0,
-                To = width + 20,
-                Duration = new Duration(TimeSpan.FromMilliseconds(1200)),
-                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseInOut }
+                To = width + 40,
+                Duration = new Duration(TimeSpan.FromMilliseconds(1800)),
+                EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
             };
-            Storyboard.SetTarget(anim, ChartRevealMask);
-            Storyboard.SetTargetProperty(anim, "(UIElement.RenderTransform).(TranslateTransform.X)");
+            Storyboard.SetTarget(slideAnim, ChartRevealMask);
+            Storyboard.SetTargetProperty(slideAnim, "(UIElement.RenderTransform).(TranslateTransform.X)");
+
+            // Fade out mask edge for softer reveal
+            var fadeAnim = new DoubleAnimation
+            {
+                From = 1,
+                To = 0,
+                BeginTime = TimeSpan.FromMilliseconds(1200),
+                Duration = new Duration(TimeSpan.FromMilliseconds(600)),
+                EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseIn }
+            };
+            Storyboard.SetTarget(fadeAnim, ChartRevealMask);
+            Storyboard.SetTargetProperty(fadeAnim, "Opacity");
 
             var sb = new Storyboard();
-            sb.Children.Add(anim);
+            sb.Children.Add(slideAnim);
+            sb.Children.Add(fadeAnim);
             sb.Completed += (_, _) => ChartRevealMask.Visibility = Visibility.Collapsed;
             sb.Begin();
         });
