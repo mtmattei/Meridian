@@ -10,7 +10,6 @@ namespace Meridian.Views;
 
 public sealed partial class DashboardPage : Page
 {
-    private readonly DispatcherTimer _clockTimer;
     private readonly DispatcherTimer _animationTimer;
     private readonly IMarketDataService _marketData;
     private readonly FinnhubService _finnhub;
@@ -46,22 +45,13 @@ public sealed partial class DashboardPage : Page
         this.InitializeComponent();
 
         _marketData = App.Services.GetRequiredService<IMarketDataService>();
+        _finnhub = App.Services.GetRequiredService<FinnhubService>();
         DataContext = new DashboardViewModel(_marketData);
-
-        // Finnhub live ticker data — set FINNHUB_API_KEY env var or replace below
-        var finnhubKey = Environment.GetEnvironmentVariable("FINNHUB_API_KEY") ?? "d6u0709r01qjm9brvoigd6u0709r01qjm9brvoj0";
-        _finnhub = new FinnhubService(
-            finnhubKey,
-            ["AAPL", "NVDA", "MSFT", "GOOGL", "META", "TSLA"]);
         _finnhub.QuotesUpdated += OnLiveQuotesUpdated;
 
-        // Live clock — 1s interval
-        _clockTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
-        _clockTimer.Tick += (_, _) => UpdateClock();
-        _clockTimer.Start();
-        UpdateClock();
+        UpdateClock(); // Initial clock display
 
-        // Animation timer — 16ms tick (~60fps) for smooth ticker scrolling
+        // Single animation timer — 16ms tick (~60fps), clock piggybacks every ~1s
         _animationTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(16) };
         _animationTimer.Tick += OnAnimationTick;
         _animationTimer.Start();
@@ -132,10 +122,8 @@ public sealed partial class DashboardPage : Page
 
     private void OnPageUnloaded(object sender, RoutedEventArgs e)
     {
-        _clockTimer.Stop();
         _animationTimer.Stop();
         _finnhub.Stop();
-        _finnhub.Dispose();
         _brailleActivityBlocks.Clear();
         _brailleBlocksCached = false;
     }
@@ -196,7 +184,72 @@ public sealed partial class DashboardPage : Page
         }
     }
 
-    // ── Trade Drawer ──────────────────────────────────────────────────
+    // ── Trade Drawer (pre-created storyboards) ────────────────────────
+
+    private Storyboard? _drawerOpenSb;
+    private Storyboard? _drawerCloseSb;
+    private TranslateTransform? _drawerTransform;
+
+    private void EnsureDrawerStoryboards()
+    {
+        if (_drawerOpenSb != null) return;
+
+        _drawerTransform = new TranslateTransform { X = 420 };
+        TradeDrawerPanel.RenderTransform = _drawerTransform;
+
+        // Open storyboard
+        var openBackdrop = new DoubleAnimation
+        {
+            From = 0, To = 1,
+            Duration = new Duration(TimeSpan.FromMilliseconds(200)),
+            EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut },
+        };
+        Storyboard.SetTarget(openBackdrop, DrawerBackdrop);
+        Storyboard.SetTargetProperty(openBackdrop, "Opacity");
+
+        var openSlide = new DoubleAnimation
+        {
+            From = 420, To = 0,
+            Duration = new Duration(TimeSpan.FromMilliseconds(350)),
+            EasingFunction = new BackEase { EasingMode = EasingMode.EaseOut, Amplitude = 0.3 },
+        };
+        Storyboard.SetTarget(openSlide, TradeDrawerPanel);
+        Storyboard.SetTargetProperty(openSlide, "(UIElement.RenderTransform).(TranslateTransform.X)");
+
+        _drawerOpenSb = new Storyboard();
+        _drawerOpenSb.Children.Add(openBackdrop);
+        _drawerOpenSb.Children.Add(openSlide);
+        _drawerOpenSb.Completed += (_, _) => _isDrawerAnimating = false;
+
+        // Close storyboard
+        var closeSlide = new DoubleAnimation
+        {
+            From = 0, To = 420,
+            Duration = new Duration(TimeSpan.FromMilliseconds(300)),
+            EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseIn },
+        };
+        Storyboard.SetTarget(closeSlide, TradeDrawerPanel);
+        Storyboard.SetTargetProperty(closeSlide, "(UIElement.RenderTransform).(TranslateTransform.X)");
+
+        var closeBackdrop = new DoubleAnimation
+        {
+            From = 1, To = 0,
+            Duration = new Duration(TimeSpan.FromMilliseconds(300)),
+            EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseIn },
+        };
+        Storyboard.SetTarget(closeBackdrop, DrawerBackdrop);
+        Storyboard.SetTargetProperty(closeBackdrop, "Opacity");
+
+        _drawerCloseSb = new Storyboard();
+        _drawerCloseSb.Children.Add(closeSlide);
+        _drawerCloseSb.Children.Add(closeBackdrop);
+        _drawerCloseSb.Completed += (_, _) =>
+        {
+            DrawerBackdrop.Visibility = Visibility.Collapsed;
+            TradeDrawerPanel.Visibility = Visibility.Collapsed;
+            _isDrawerAnimating = false;
+        };
+    }
 
     private async void OpenTradeDrawer(string ticker)
     {
@@ -209,45 +262,16 @@ public sealed partial class DashboardPage : Page
             if (stock == null) return;
 
             TradeDrawerPanel.SetStock(stock);
+            EnsureDrawerStoryboards();
 
-            // Make both elements visible before animating
             DrawerBackdrop.Opacity = 0;
             DrawerBackdrop.Visibility = Visibility.Visible;
             TradeDrawerPanel.Visibility = Visibility.Visible;
-
-            // Set up slide transform for the drawer panel
-            var transform = new TranslateTransform { X = 420 };
-            TradeDrawerPanel.RenderTransform = transform;
+            _drawerTransform!.X = 420;
 
             _isDrawerAnimating = true;
-
-            // Backdrop fade in: 0 -> 1 over 200ms
-            var backdropAnim = new DoubleAnimation
-            {
-                From = 0,
-                To = 1,
-                Duration = new Duration(TimeSpan.FromMilliseconds(200)),
-                EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut },
-            };
-            Storyboard.SetTarget(backdropAnim, DrawerBackdrop);
-            Storyboard.SetTargetProperty(backdropAnim, "Opacity");
-
-            // Panel slide in: X 420 -> 0 over 350ms with spring-like easing
-            var slideAnim = new DoubleAnimation
-            {
-                From = 420,
-                To = 0,
-                Duration = new Duration(TimeSpan.FromMilliseconds(350)),
-                EasingFunction = new BackEase { EasingMode = EasingMode.EaseOut, Amplitude = 0.3 },
-            };
-            Storyboard.SetTarget(slideAnim, TradeDrawerPanel);
-            Storyboard.SetTargetProperty(slideAnim, "(UIElement.RenderTransform).(TranslateTransform.X)");
-
-            var sb = new Storyboard();
-            sb.Children.Add(backdropAnim);
-            sb.Children.Add(slideAnim);
-            sb.Completed += (_, _) => _isDrawerAnimating = false;
-            sb.Begin();
+            _drawerOpenSb!.Stop();
+            _drawerOpenSb.Begin();
         }
         catch (Exception ex)
         {
@@ -260,44 +284,10 @@ public sealed partial class DashboardPage : Page
     {
         if (_isDrawerAnimating) return;
 
+        EnsureDrawerStoryboards();
         _isDrawerAnimating = true;
-
-        // Ensure the panel has a TranslateTransform for the slide-out
-        if (TradeDrawerPanel.RenderTransform is not TranslateTransform)
-            TradeDrawerPanel.RenderTransform = new TranslateTransform { X = 0 };
-
-        // Panel slide out: X 0 -> 420 over 300ms
-        var slideAnim = new DoubleAnimation
-        {
-            From = 0,
-            To = 420,
-            Duration = new Duration(TimeSpan.FromMilliseconds(300)),
-            EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseIn },
-        };
-        Storyboard.SetTarget(slideAnim, TradeDrawerPanel);
-        Storyboard.SetTargetProperty(slideAnim, "(UIElement.RenderTransform).(TranslateTransform.X)");
-
-        // Backdrop fade out: 1 -> 0 over 300ms
-        var backdropAnim = new DoubleAnimation
-        {
-            From = 1,
-            To = 0,
-            Duration = new Duration(TimeSpan.FromMilliseconds(300)),
-            EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseIn },
-        };
-        Storyboard.SetTarget(backdropAnim, DrawerBackdrop);
-        Storyboard.SetTargetProperty(backdropAnim, "Opacity");
-
-        var sb = new Storyboard();
-        sb.Children.Add(slideAnim);
-        sb.Children.Add(backdropAnim);
-        sb.Completed += (_, _) =>
-        {
-            DrawerBackdrop.Visibility = Visibility.Collapsed;
-            TradeDrawerPanel.Visibility = Visibility.Collapsed;
-            _isDrawerAnimating = false;
-        };
-        sb.Begin();
+        _drawerCloseSb!.Stop();
+        _drawerCloseSb.Begin();
     }
 
     private void OnDrawerBackdropTapped(object sender, TappedRoutedEventArgs e)
@@ -337,6 +327,10 @@ public sealed partial class DashboardPage : Page
 
         if (_animationFrame % 13 == 0)
             UpdateBrailleActivity();
+
+        // Clock update ~1s (62 * 16ms ≈ 992ms)
+        if (_animationFrame % 62 == 0)
+            UpdateClock();
     }
 
     // ── Ticker Tape ───────────────────────────────────────────────────
@@ -433,8 +427,11 @@ public sealed partial class DashboardPage : Page
         if (TickerTranslateB.X < -_tickerWidth)
             TickerTranslateB.X = TickerTranslateA.X + _tickerWidth;
 
-        // Footer ticker scroll
+        // Footer ticker scroll with modular reset (prevents float overflow)
         FooterTickerTranslate.X -= 0.29;
+        var fw = FooterTickerText.ActualWidth;
+        if (fw > 50 && FooterTickerTranslate.X < -fw / 5.0)
+            FooterTickerTranslate.X += fw / 5.0;
     }
 
     private int _pulseOffset;
@@ -575,9 +572,11 @@ public sealed partial class DashboardPage : Page
 
     // ── Holdings tap (no reflection — use dynamic) ────────────────────
 
-    private static string? ExtractTicker(object dataContext)
+    private static string? ExtractTicker(object? dataContext)
     {
-        // MVUX generated bindable wraps the record; dynamic avoids reflection overhead
+        // Try direct record types first, fall back to dynamic for MVUX proxies
+        if (dataContext is Holding h) return h.Ticker;
+        if (dataContext is Stock s) return s.Ticker;
         try { return ((dynamic)dataContext).Ticker as string; }
         catch { return null; }
     }

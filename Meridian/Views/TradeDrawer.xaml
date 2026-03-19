@@ -3,9 +3,9 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              Width="420">
 
-    <Border Background="{StaticResource MeridianCardBrush}"
+    <Border Background="{ThemeResource MeridianCardBrush}"
             BorderThickness="1,0,0,0"
-            BorderBrush="{StaticResource MeridianBorderBrush}">
+            BorderBrush="{ThemeResource MeridianBorderBrush}">
         <Grid>
             <!-- Form panel -->
             <ScrollViewer x:Name="FormPanel">
@@ -30,7 +30,7 @@
                                 </Border>
                             </StackPanel>
                             <TextBlock x:Name="StockName" FontSize="12"
-                                       Foreground="{StaticResource MeridianTextSubtleBrush}" />
+                                       Foreground="{ThemeResource MeridianTextSubtleBrush}" />
                             <TextBlock x:Name="StockPrice"
                                        FontFamily="{StaticResource IBMPlexMonoMediumFont}"
                                        FontSize="18" />
@@ -40,15 +40,15 @@
                                 Width="32" Height="32" Padding="0"
                                 CornerRadius="8" VerticalAlignment="Top"
                                 Background="Transparent"
-                                Foreground="{StaticResource MeridianTextPrimaryBrush}"
+                                Foreground="{ThemeResource MeridianTextPrimaryBrush}"
                                 BorderThickness="1"
-                                BorderBrush="{StaticResource MeridianBorderBrush}"
+                                BorderBrush="{ThemeResource MeridianBorderBrush}"
                                 AutomationProperties.Name="Close trade drawer" />
                     </Grid>
 
                     <!-- Buy/Sell Toggle -->
                     <Border CornerRadius="12" Padding="4"
-                            Background="{StaticResource MeridianBackgroundBrush}">
+                            Background="{ThemeResource MeridianBackgroundBrush}">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
@@ -82,33 +82,33 @@
                         <StackPanel x:Name="QuickSelectPanel" Orientation="Horizontal" Spacing="6">
                             <Button Content="1" Tag="1" FontSize="11" Padding="12,6"
                                     CornerRadius="8" BorderThickness="1"
-                                    BorderBrush="{StaticResource MeridianBorderBrush}"
+                                    BorderBrush="{ThemeResource MeridianBorderBrush}"
                                     Background="Transparent"
-                                    Foreground="{StaticResource MeridianTextPrimaryBrush}"
+                                    Foreground="{ThemeResource MeridianTextPrimaryBrush}"
                                     AutomationProperties.Name="Buy 1 share" />
                             <Button Content="5" Tag="5" FontSize="11" Padding="12,6"
                                     CornerRadius="8" BorderThickness="1"
-                                    BorderBrush="{StaticResource MeridianBorderBrush}"
+                                    BorderBrush="{ThemeResource MeridianBorderBrush}"
                                     Background="Transparent"
-                                    Foreground="{StaticResource MeridianTextPrimaryBrush}"
+                                    Foreground="{ThemeResource MeridianTextPrimaryBrush}"
                                     AutomationProperties.Name="Buy 5 shares" />
                             <Button Content="10" Tag="10" FontSize="11" Padding="12,6"
                                     CornerRadius="8" BorderThickness="1"
-                                    BorderBrush="{StaticResource MeridianBorderBrush}"
+                                    BorderBrush="{ThemeResource MeridianBorderBrush}"
                                     Background="Transparent"
-                                    Foreground="{StaticResource MeridianTextPrimaryBrush}"
+                                    Foreground="{ThemeResource MeridianTextPrimaryBrush}"
                                     AutomationProperties.Name="Buy 10 shares" />
                             <Button Content="25" Tag="25" FontSize="11" Padding="12,6"
                                     CornerRadius="8" BorderThickness="1"
-                                    BorderBrush="{StaticResource MeridianBorderBrush}"
+                                    BorderBrush="{ThemeResource MeridianBorderBrush}"
                                     Background="Transparent"
-                                    Foreground="{StaticResource MeridianTextPrimaryBrush}"
+                                    Foreground="{ThemeResource MeridianTextPrimaryBrush}"
                                     AutomationProperties.Name="Buy 25 shares" />
                             <Button Content="100" Tag="100" FontSize="11" Padding="12,6"
                                     CornerRadius="8" BorderThickness="1"
-                                    BorderBrush="{StaticResource MeridianBorderBrush}"
+                                    BorderBrush="{ThemeResource MeridianBorderBrush}"
                                     Background="Transparent"
-                                    Foreground="{StaticResource MeridianTextPrimaryBrush}"
+                                    Foreground="{ThemeResource MeridianTextPrimaryBrush}"
                                     AutomationProperties.Name="Buy 100 shares" />
                         </StackPanel>
                     </StackPanel>
@@ -120,20 +120,20 @@
                             <Button x:Name="MarketButton" Content="Market"
                                     FontSize="12" Padding="16,8" CornerRadius="8"
                                     BorderThickness="1"
-                                    BorderBrush="{StaticResource MeridianAccentBrush}"
-                                    Foreground="{StaticResource MeridianAccentBrush}"
-                                    Background="{StaticResource MeridianAccentBgTintBrush}"
+                                    BorderBrush="{ThemeResource MeridianAccentBrush}"
+                                    Foreground="{ThemeResource MeridianAccentBrush}"
+                                    Background="{ThemeResource MeridianAccentBgTintBrush}"
                                     AutomationProperties.Name="Market order" />
                             <Button x:Name="LimitButton" Content="Limit"
                                     FontSize="12" Padding="16,8" CornerRadius="8"
                                     BorderThickness="1"
-                                    BorderBrush="{StaticResource MeridianBorderBrush}"
+                                    BorderBrush="{ThemeResource MeridianBorderBrush}"
                                     Background="Transparent"
                                     AutomationProperties.Name="Limit order" />
                             <Button x:Name="StopButton" Content="Stop"
                                     FontSize="12" Padding="16,8" CornerRadius="8"
                                     BorderThickness="1"
-                                    BorderBrush="{StaticResource MeridianBorderBrush}"
+                                    BorderBrush="{ThemeResource MeridianBorderBrush}"
                                     Background="Transparent"
                                     AutomationProperties.Name="Stop order" />
                         </StackPanel>
@@ -151,23 +151,23 @@
                     <!-- Order Preview -->
                     <Border x:Name="PreviewCard" CornerRadius="12" Padding="16"
                             BorderThickness="1"
-                            BorderBrush="{StaticResource MeridianBorderBrush}"
-                            Background="{StaticResource MeridianBackgroundBrush}">
+                            BorderBrush="{ThemeResource MeridianBorderBrush}"
+                            Background="{ThemeResource MeridianBackgroundBrush}">
                         <StackPanel Spacing="6">
                             <TextBlock x:Name="PreviewAction" FontSize="12" FontWeight="SemiBold" />
                             <TextBlock x:Name="PreviewQuantity"
                                        FontFamily="{StaticResource IBMPlexMonoFont}"
                                        FontSize="12"
-                                       Foreground="{StaticResource MeridianTextMutedBrush}" />
+                                       Foreground="{ThemeResource MeridianTextMutedBrush}" />
                             <TextBlock x:Name="PreviewPrice"
                                        FontFamily="{StaticResource IBMPlexMonoFont}"
                                        FontSize="12"
-                                       Foreground="{StaticResource MeridianTextMutedBrush}" />
-                            <Border Height="1" Background="{StaticResource MeridianBorderBrush}"
+                                       Foreground="{ThemeResource MeridianTextMutedBrush}" />
+                            <Border Height="1" Background="{ThemeResource MeridianBorderBrush}"
                                     Margin="0,4" />
                             <Grid>
                                 <TextBlock Text="Est. Total" FontSize="12"
-                                           Foreground="{StaticResource MeridianTextMutedBrush}" />
+                                           Foreground="{ThemeResource MeridianTextMutedBrush}" />
                                 <TextBlock x:Name="PreviewTotal" HorizontalAlignment="Right"
                                            FontFamily="{StaticResource IBMPlexMonoMediumFont}"
                                            FontSize="14" />
@@ -191,7 +191,7 @@
                         VerticalAlignment="Center" HorizontalAlignment="Center"
                         Spacing="12">
                 <TextBlock Text="✓" FontSize="48"
-                           Foreground="{StaticResource MeridianGainBrush}"
+                           Foreground="{ThemeResource MeridianGainBrush}"
                            HorizontalAlignment="Center" />
                 <TextBlock Text="Order Placed"
                            FontFamily="{StaticResource InstrumentSerifFont}"
@@ -199,7 +199,7 @@
                 <TextBlock x:Name="ConfirmationSummary"
                            FontFamily="{StaticResource IBMPlexMonoFont}"
                            FontSize="13" HorizontalAlignment="Center"
-                           Foreground="{StaticResource MeridianTextMutedBrush}" />
+                           Foreground="{ThemeResource MeridianTextMutedBrush}" />
             </StackPanel>
         </Grid>
     </Border>

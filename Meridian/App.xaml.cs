@@ -37,6 +37,13 @@ public partial class App : Application
                 .ConfigureServices((context, services) =>
                 {
                     services.AddSingleton<IMarketDataService, MockMarketDataService>();
+                    services.AddSingleton(sp =>
+                    {
+                        var key = Environment.GetEnvironmentVariable("FINNHUB_API_KEY")
+                            ?? "d6u0709r01qjm9brvoigd6u0709r01qjm9brvoj0";
+                        return new FinnhubService(key,
+                            ["AAPL", "NVDA", "MSFT", "GOOGL", "META", "TSLA"]);
+                    });
                 })
             );
         MainWindow = builder.Window;
