@@ -155,8 +155,9 @@
                     </StackPanel>
                 </StackPanel>
 
-                <!-- Index Cards (data-bound) -->
+                <!-- Index Cards (3 cards = 360px to match sidebar width) -->
                 <ItemsRepeater Grid.Column="1" VerticalAlignment="Center"
+                               HorizontalAlignment="Right" Width="360"
                                ItemsSource="{Binding IndexTickers}">
                     <ItemsRepeater.Layout>
                         <StackLayout Orientation="Horizontal" Spacing="6" />
@@ -166,7 +167,7 @@
                             <Border CornerRadius="12" BorderThickness="1"
                                     BorderBrush="{StaticResource MeridianBorderBrush}"
                                     Background="{StaticResource MeridianCardBrush}"
-                                    Padding="16,8" MinWidth="120" MaxHeight="72">
+                                    Padding="12,8" Width="116">
                                 <StackPanel Spacing="2">
                                     <TextBlock Text="{Binding Name}"
                                                FontSize="10" FontWeight="SemiBold"

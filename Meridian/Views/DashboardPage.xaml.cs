@@ -5,6 +5,7 @@ using Meridian.Presentation;
 using Meridian.Services;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Animation;
 using SkiaSharp;
 
 namespace Meridian.Views;
@@ -17,6 +18,7 @@ public sealed partial class DashboardPage : Page
     private string? _currentChartTicker;
     private Border? _currentExpandedPanel;
     private int _animationFrame;
+    private bool _isDrawerAnimating;
 
     // Cached braille TextBlock references (avoids visual tree walk every tick)
     private readonly List<TextBlock> _brailleActivityBlocks = new();
@@ -105,6 +107,8 @@ public sealed partial class DashboardPage : Page
 
     private async void OpenTradeDrawer(string ticker)
     {
+        if (_isDrawerAnimating) return;
+
         try
         {
             var watchlist = await _marketData.GetWatchlistAsync(CancellationToken.None);
@@ -112,22 +116,101 @@ public sealed partial class DashboardPage : Page
             if (stock == null) return;
 
             TradeDrawerPanel.SetStock(stock);
+
+            // Make both elements visible before animating
+            DrawerBackdrop.Opacity = 0;
             DrawerBackdrop.Visibility = Visibility.Visible;
             TradeDrawerPanel.Visibility = Visibility.Visible;
+
+            // Set up slide transform for the drawer panel
+            var transform = new TranslateTransform { X = 420 };
+            TradeDrawerPanel.RenderTransform = transform;
+
+            _isDrawerAnimating = true;
+
+            // Backdrop fade in: 0 -> 1 over 200ms
+            var backdropAnim = new DoubleAnimation
+            {
+                From = 0,
+                To = 1,
+                Duration = new Duration(TimeSpan.FromMilliseconds(200)),
+                EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut },
+            };
+            Storyboard.SetTarget(backdropAnim, DrawerBackdrop);
+            Storyboard.SetTargetProperty(backdropAnim, "Opacity");
+
+            // Panel slide in: X 420 -> 0 over 350ms with spring-like easing
+            var slideAnim = new DoubleAnimation
+            {
+                From = 420,
+                To = 0,
+                Duration = new Duration(TimeSpan.FromMilliseconds(350)),
+                EasingFunction = new BackEase { EasingMode = EasingMode.EaseOut, Amplitude = 0.3 },
+            };
+            Storyboard.SetTarget(slideAnim, TradeDrawerPanel);
+            Storyboard.SetTargetProperty(slideAnim, "(UIElement.RenderTransform).(TranslateTransform.X)");
+
+            var sb = new Storyboard();
+            sb.Children.Add(backdropAnim);
+            sb.Children.Add(slideAnim);
+            sb.Completed += (_, _) => _isDrawerAnimating = false;
+            sb.Begin();
         }
         catch (Exception ex)
         {
+            _isDrawerAnimating = false;
             System.Diagnostics.Debug.WriteLine($"Trade drawer error: {ex.Message}");
         }
     }
 
     private void CloseTradeDrawer()
     {
-        DrawerBackdrop.Visibility = Visibility.Collapsed;
-        TradeDrawerPanel.Visibility = Visibility.Collapsed;
+        if (_isDrawerAnimating) return;
+
+        _isDrawerAnimating = true;
+
+        // Ensure the panel has a TranslateTransform for the slide-out
+        if (TradeDrawerPanel.RenderTransform is not TranslateTransform)
+            TradeDrawerPanel.RenderTransform = new TranslateTransform { X = 0 };
+
+        // Panel slide out: X 0 -> 420 over 300ms
+        var slideAnim = new DoubleAnimation
+        {
+            From = 0,
+            To = 420,
+            Duration = new Duration(TimeSpan.FromMilliseconds(300)),
+            EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseIn },
+        };
+        Storyboard.SetTarget(slideAnim, TradeDrawerPanel);
+        Storyboard.SetTargetProperty(slideAnim, "(UIElement.RenderTransform).(TranslateTransform.X)");
+
+        // Backdrop fade out: 1 -> 0 over 300ms
+        var backdropAnim = new DoubleAnimation
+        {
+            From = 1,
+            To = 0,
+            Duration = new Duration(TimeSpan.FromMilliseconds(300)),
+            EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseIn },
+        };
+        Storyboard.SetTarget(backdropAnim, DrawerBackdrop);
+        Storyboard.SetTargetProperty(backdropAnim, "Opacity");
+
+        var sb = new Storyboard();
+        sb.Children.Add(slideAnim);
+        sb.Children.Add(backdropAnim);
+        sb.Completed += (_, _) =>
+        {
+            DrawerBackdrop.Visibility = Visibility.Collapsed;
+            TradeDrawerPanel.Visibility = Visibility.Collapsed;
+            _isDrawerAnimating = false;
+        };
+        sb.Begin();
     }
 
-    private void OnDrawerBackdropTapped(object sender, TappedRoutedEventArgs e) => CloseTradeDrawer();
+    private void OnDrawerBackdropTapped(object sender, TappedRoutedEventArgs e)
+    {
+        if (!_isDrawerAnimating) CloseTradeDrawer();
+    }
 
     // ── Animation Timer ───────────────────────────────────────────────
 
@@ -274,21 +357,30 @@ public sealed partial class DashboardPage : Page
             PerformanceChart.TooltipTextPaint = new SolidColorPaint(TooltipTextColor);
             PerformanceChart.TooltipTextSize = 11;
 
-            var formattedDates = dates.Select(d =>
-                DateTime.TryParse(d, out var dt) ? dt.ToString("MMM d") : d).ToArray();
+            // Parse dates for X axis labeling
+            var parsedDates = dates.Select(d =>
+                DateTime.TryParse(d, out var dt) ? dt : DateTime.MinValue).ToArray();
 
             PerformanceChart.XAxes = new Axis[]
             {
                 new Axis
                 {
-                    Labels = formattedDates,
                     LabelsRotation = 0,
                     TextSize = 10,
                     LabelsPaint = axisLabelPaint,
                     SeparatorsPaint = null,
                     ShowSeparatorLines = false,
-                    ForceStepToMin = true,
-                    MinStep = Math.Max(1, dates.Length / 6),
+                    MinStep = 1,
+                    Labeler = val =>
+                    {
+                        var idx = (int)Math.Round(val);
+                        if (idx < 0 || idx >= parsedDates.Length) return "";
+                        // Show label only at evenly spaced intervals (~6 labels)
+                        var step = Math.Max(1, parsedDates.Length / 6);
+                        if (idx % step != 0 && idx != parsedDates.Length - 1) return "";
+                        var dt = parsedDates[idx];
+                        return dt == DateTime.MinValue ? "" : dt.ToString("MMM d");
+                    },
                 }
             };
 
