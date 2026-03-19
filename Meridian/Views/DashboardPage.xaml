@@ -228,8 +228,10 @@
                                             CornerRadius="8" BorderThickness="1"
                                             BorderBrush="{StaticResource MeridianBorderBrush}"
                                             Background="Transparent"
+                                            Foreground="{StaticResource MeridianTextPrimaryBrush}"
                                             VerticalAlignment="Center">
-                                        <FontIcon Glyph="&#xE72B;" FontSize="12" />
+                                        <FontIcon Glyph="&#xE72B;" FontSize="12"
+                                                  Foreground="{StaticResource MeridianTextPrimaryBrush}" />
                                     </Button>
 
                                     <StackPanel>
@@ -246,8 +248,8 @@
                                                        FontFamily="{StaticResource IBMPlexMonoMediumFont}"
                                                        FontSize="12" VerticalAlignment="Center" />
                                             <Button Content="TRADE" FontSize="10" FontWeight="Bold"
-                                                    Padding="12,2" CornerRadius="6" BorderThickness="1"
-                                                    Height="24" VerticalAlignment="Center"
+                                                    Padding="10,0" CornerRadius="6" BorderThickness="1"
+                                                    Height="22" MinHeight="0" VerticalAlignment="Center"
                                                     BorderBrush="{StaticResource MeridianAccentBrush}"
                                                     Foreground="{StaticResource MeridianAccentBrush}"
                                                     Background="{StaticResource MeridianAccentBgTintBrush}"
@@ -388,15 +390,11 @@
                         </Border>
 
                         <!-- Allocation + Volume Stack -->
-                        <Grid Grid.Column="2">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="*" />
-                            </Grid.RowDefinitions>
-                            <Border Grid.Row="0" CornerRadius="16" BorderThickness="1"
+                        <StackPanel Grid.Column="2" Spacing="20">
+                            <Border CornerRadius="16" BorderThickness="1"
                                     BorderBrush="{StaticResource MeridianBorderBrush}"
                                     Background="{StaticResource MeridianCardBrush}"
-                                    Padding="24,22">
+                                    Padding="24,22" MinHeight="210">
                                 <StackPanel Spacing="14">
                                     <TextBlock Style="{StaticResource SectionLabel}"
                                                Text="SECTOR ALLOCATION" />
@@ -405,11 +403,10 @@
                                         Sectors="{Binding Sectors}" />
                                 </StackPanel>
                             </Border>
-                            <Border Grid.Row="1" CornerRadius="16" BorderThickness="1"
+                            <Border CornerRadius="16" BorderThickness="1"
                                     BorderBrush="{StaticResource MeridianBorderBrush}"
                                     Background="{StaticResource MeridianCardBrush}"
-                                    Padding="24,22" Margin="0,20,0,0"
-                                    VerticalAlignment="Bottom">
+                                    Padding="24,22" MinHeight="210">
                                 <StackPanel Spacing="8">
                                     <TextBlock Style="{StaticResource SectionLabel}"
                                                Text="VOLUME PROFILE" />
@@ -418,7 +415,7 @@
                                         VolumeData="{Binding Volume}" />
                                 </StackPanel>
                             </Border>
-                        </Grid>
+                        </StackPanel>
                     </Grid>
                 </Grid>
 

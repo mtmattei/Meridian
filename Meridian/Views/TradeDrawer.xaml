@@ -40,6 +40,7 @@
                                 Width="32" Height="32" Padding="0"
                                 CornerRadius="8" VerticalAlignment="Top"
                                 Background="Transparent"
+                                Foreground="{StaticResource MeridianTextPrimaryBrush}"
                                 BorderThickness="1"
                                 BorderBrush="{StaticResource MeridianBorderBrush}"
                                 AutomationProperties.Name="Close trade drawer" />
@@ -83,26 +84,31 @@
                                     CornerRadius="8" BorderThickness="1"
                                     BorderBrush="{StaticResource MeridianBorderBrush}"
                                     Background="Transparent"
+                                    Foreground="{StaticResource MeridianTextPrimaryBrush}"
                                     AutomationProperties.Name="Buy 1 share" />
                             <Button Content="5" Tag="5" FontSize="11" Padding="12,6"
                                     CornerRadius="8" BorderThickness="1"
                                     BorderBrush="{StaticResource MeridianBorderBrush}"
                                     Background="Transparent"
+                                    Foreground="{StaticResource MeridianTextPrimaryBrush}"
                                     AutomationProperties.Name="Buy 5 shares" />
                             <Button Content="10" Tag="10" FontSize="11" Padding="12,6"
                                     CornerRadius="8" BorderThickness="1"
                                     BorderBrush="{StaticResource MeridianBorderBrush}"
                                     Background="Transparent"
+                                    Foreground="{StaticResource MeridianTextPrimaryBrush}"
                                     AutomationProperties.Name="Buy 10 shares" />
                             <Button Content="25" Tag="25" FontSize="11" Padding="12,6"
                                     CornerRadius="8" BorderThickness="1"
                                     BorderBrush="{StaticResource MeridianBorderBrush}"
                                     Background="Transparent"
+                                    Foreground="{StaticResource MeridianTextPrimaryBrush}"
                                     AutomationProperties.Name="Buy 25 shares" />
                             <Button Content="100" Tag="100" FontSize="11" Padding="12,6"
                                     CornerRadius="8" BorderThickness="1"
                                     BorderBrush="{StaticResource MeridianBorderBrush}"
                                     Background="Transparent"
+                                    Foreground="{StaticResource MeridianTextPrimaryBrush}"
                                     AutomationProperties.Name="Buy 100 shares" />
                         </StackPanel>
                     </StackPanel>

@@ -32,6 +32,22 @@ public sealed partial class DashboardPage : Page
     private static readonly SKColor LossColor = new(0xB5, 0x34, 0x2B);
     private static readonly SKColor AxisLabelColor = new(0xC4, 0xC0, 0xB8);
     private static readonly SKColor TooltipTextColor = new(0x1A, 0x1A, 0x2E);
+    private static readonly SKColor TooltipDateColor = new(0x9C, 0x98, 0x90);
+
+    // Tooltip font (loaded once from embedded font file)
+    private static SKTypeface? _tooltipTypeface;
+    private static SKTypeface GetTooltipTypeface()
+    {
+        if (_tooltipTypeface != null) return _tooltipTypeface;
+        try
+        {
+            var fontPath = Path.Combine(AppContext.BaseDirectory, "Assets", "Fonts", "IBM_Plex_Mono", "IBMPlexMono-SemiBold.ttf");
+            if (File.Exists(fontPath))
+                _tooltipTypeface = SKTypeface.FromFile(fontPath);
+        }
+        catch { /* fallback to default */ }
+        return _tooltipTypeface ?? SKTypeface.Default;
+    }
 
     // Hover brushes (lazy from resources)
     private static SolidColorBrush? _hoverBorderBrush;
@@ -311,8 +327,8 @@ public sealed partial class DashboardPage : Page
 
         TickerTapeText.Inlines.Clear();
 
-        // Triple for seamless continuous loop — colored deltas + bold ticker symbols
-        for (int repeat = 0; repeat < 3; repeat++)
+        // Quintuple for seamless continuous loop — colored deltas + bold ticker symbols
+        for (int repeat = 0; repeat < 5; repeat++)
         {
             foreach (var t in tickers)
             {
@@ -335,7 +351,7 @@ public sealed partial class DashboardPage : Page
     private void BuildFooterTickerText(IReadOnlyList<StreamTicker> tickers)
     {
         var sb = new System.Text.StringBuilder();
-        for (int repeat = 0; repeat < 3; repeat++)
+        for (int repeat = 0; repeat < 5; repeat++)
         {
             foreach (var t in tickers)
                 sb.Append($"⣤⣴⣶⣷ {t.Ticker} {t.Price}  ·  ");
@@ -363,15 +379,15 @@ public sealed partial class DashboardPage : Page
     private void UpdateTickerScroll()
     {
         InitTickerTape();
-        TickerTranslate.X -= 0.55;
+        TickerTranslate.X -= 0.63;
         // Reset when one full segment has scrolled — seamless continuous loop
-        var segmentWidth = TickerTapeText.ActualWidth / 3.0;
+        var segmentWidth = TickerTapeText.ActualWidth / 5.0;
         if (segmentWidth > 0 && TickerTranslate.X < -segmentWidth)
             TickerTranslate.X += segmentWidth;
 
         // Footer ticker scroll (slower pace)
-        FooterTickerTranslate.X -= 0.25;
-        var footerWidth = FooterTickerText.ActualWidth / 3.0;
+        FooterTickerTranslate.X -= 0.29;
+        var footerWidth = FooterTickerText.ActualWidth / 5.0;
         if (footerWidth > 0 && FooterTickerTranslate.X < -footerWidth)
             FooterTickerTranslate.X += footerWidth;
     }
@@ -476,8 +492,11 @@ public sealed partial class DashboardPage : Page
             };
 
             PerformanceChart.TooltipBackgroundPaint = new SolidColorPaint(SKColors.White);
-            PerformanceChart.TooltipTextPaint = new SolidColorPaint(TooltipTextColor);
-            PerformanceChart.TooltipTextSize = 11;
+            PerformanceChart.TooltipTextPaint = new SolidColorPaint(TooltipTextColor)
+            {
+                SKTypeface = GetTooltipTypeface()
+            };
+            PerformanceChart.TooltipTextSize = 13;
 
             // Parse dates for X axis labeling
             var parsedDates = dates.Select(d =>
