@@ -338,10 +338,10 @@ public sealed partial class DashboardPage : Page
         if (_animationFrame % 9 == 0)
             UpdateBraillePulse();
 
-        // Gain pill pulse: smooth 3s sine wave on opacity + subtle scale
+        // Gain pill pulse: obvious breathing animation (opacity 0.45→1.0 + scale)
         var phase = (_animationFrame % 188) / 188.0 * Math.PI * 2;
-        GainPill.Opacity = 0.85 + 0.15 * Math.Sin(phase);
-        var scale = 1.0 + 0.015 * Math.Sin(phase);
+        GainPill.Opacity = 0.72 + 0.28 * Math.Sin(phase);
+        var scale = 1.0 + 0.02 * Math.Sin(phase);
         GainPillScale.ScaleX = scale;
         GainPillScale.ScaleY = scale;
 
@@ -362,33 +362,23 @@ public sealed partial class DashboardPage : Page
             ? _finnhub.GetLatestQuotes()
             : (IReadOnlyList<StreamTicker>)_marketData.GetStreamTickers();
 
-        var gainBrush = (SolidColorBrush)Application.Current.Resources["MeridianGainBrush"];
-        var lossBrush = (SolidColorBrush)Application.Current.Resources["MeridianLossBrush"];
+        // Plain text for glitch-free scrolling — 10x repeat for long buffer
+        var segment = new System.Text.StringBuilder();
+        foreach (var t in tickers)
+            segment.Append($"⣤⣴⣶⣷ {t.Ticker}  {t.Price}  {t.Delta}   │   ");
 
-        TickerTapeText.Inlines.Clear();
+        var oneSegment = segment.ToString();
+        var sb = new System.Text.StringBuilder(oneSegment.Length * 10);
+        for (int i = 0; i < 10; i++)
+            sb.Append(oneSegment);
 
-        // Quintuple for seamless continuous loop — colored deltas + bold ticker symbols
-        for (int repeat = 0; repeat < 5; repeat++)
-        {
-            foreach (var t in tickers)
-            {
-                TickerTapeText.Inlines.Add(new Run { Text = "⣤⣴⣶⣷ " });
-                TickerTapeText.Inlines.Add(new Run { Text = t.Ticker, FontWeight = FontWeights.Bold });
-                TickerTapeText.Inlines.Add(new Run { Text = $" {t.Price} " });
-                TickerTapeText.Inlines.Add(new Run
-                {
-                    Text = t.Delta,
-                    Foreground = t.IsUp ? gainBrush : lossBrush
-                });
-                TickerTapeText.Inlines.Add(new Run { Text = "  │  " });
-            }
-        }
+        TickerTapeText.Text = sb.ToString();
 
         // Reset cached widths on rebuild (new content may differ)
         _cachedSegmentWidth = 0;
         _cachedFooterSegmentWidth = 0;
 
-        // Also populate footer ticker (plain text, decorative)
+        // Also populate footer ticker
         BuildFooterTickerText(tickers);
     }
 
@@ -423,14 +413,15 @@ public sealed partial class DashboardPage : Page
     private void UpdateTickerScroll()
     {
         InitTickerTape();
-        TickerTranslate.X -= 0.63;
+        TickerTranslate.X -= 0.72;
 
-        // Cache segment width after first valid measurement for glitch-free reset
+        // Cache one-segment width (1/10 of total) for seamless wrap
         if (_cachedSegmentWidth <= 0)
         {
-            var w = TickerTapeText.ActualWidth / 5.0;
+            var w = TickerTapeText.ActualWidth / 10.0;
             if (w > 50) _cachedSegmentWidth = w;
         }
+        // Reset by one segment — content is identical, visually seamless
         if (_cachedSegmentWidth > 0 && TickerTranslate.X < -_cachedSegmentWidth)
             TickerTranslate.X += _cachedSegmentWidth;
 
@@ -579,8 +570,11 @@ public sealed partial class DashboardPage : Page
                 }
             };
 
-            var yRange = values.Max() - values.Min();
-            var yStep = yRange > 0 ? yRange / 5.0 : 1;
+            var yMin = values.Min();
+            var yMax = values.Max();
+            var yRange = yMax - yMin;
+            var yPad = yRange * 0.02;
+            var yStep = yRange > 0 ? yRange / 4.0 : 1;
 
             PerformanceChart.YAxes = new Axis[]
             {
@@ -590,6 +584,8 @@ public sealed partial class DashboardPage : Page
                     LabelsPaint = axisLabelPaint,
                     SeparatorsPaint = null,
                     ShowSeparatorLines = false,
+                    MinLimit = yMin - yPad,
+                    MaxLimit = yMax + yPad,
                     MinStep = yStep,
                     ForceStepToMin = true,
                     Labeler = val => string.IsNullOrEmpty(ticker)

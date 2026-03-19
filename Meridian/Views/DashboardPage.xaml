@@ -413,13 +413,18 @@
                                     Padding="24,22"
                                     PointerEntered="OnChartCardPointerEntered"
                                     PointerExited="OnChartCardPointerExited">
-                                <StackPanel Spacing="8" VerticalAlignment="Center">
-                                    <TextBlock Style="{StaticResource SectionLabel}"
-                                               Text="VOLUME PROFILE" />
-                                    <controls:VolumeChartControl
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="*" />
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" Style="{StaticResource SectionLabel}"
+                                               Text="VOLUME PROFILE" Margin="0,0,0,8" />
+                                    <controls:VolumeChartControl Grid.Row="1"
                                         x:Name="VolumeChart"
-                                        VolumeData="{Binding Volume}" />
-                                </StackPanel>
+                                        VolumeData="{Binding Volume}"
+                                        VerticalAlignment="Center" />
+                                </Grid>
                             </Border>
                         </Grid>
                     </Grid>
@@ -438,7 +443,7 @@
                         <TextBox PlaceholderText="Search ticker or name…"
                                  Text="{Binding SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                  FontFamily="{StaticResource OutfitFont}"
-                                 FontSize="13" CornerRadius="12" Padding="32,6,12,6"
+                                 FontSize="12" CornerRadius="12" Padding="32,6,12,6"
                                  Background="{StaticResource MeridianCardBrush}"
                                  BorderThickness="1"
                                  BorderBrush="{StaticResource MeridianBorderBrush}"

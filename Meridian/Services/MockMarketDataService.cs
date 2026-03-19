@@ -77,7 +77,8 @@ public class MockMarketDataService : IMarketDataService
 			new Holding("MSFT", 40, 380.00m, 468.21m),
 			new Holding("GOOGL", 60, 142.58m, 142.58m),
 			new Holding("META", 18, 350.42m, 350.42m),
-			new Holding("JPM", 30, 195.84m, 195.84m));
+			new Holding("JPM", 30, 195.84m, 195.84m),
+			new Holding("TSLA", 15, 210.00m, 248.92m));
 
 	// ── Sectors data ────────────────────────────────────────────────────
 
