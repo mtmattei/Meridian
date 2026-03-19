@@ -5,8 +5,18 @@ namespace Meridian.Presentation;
 
 public partial record DashboardModel(IMarketDataService MarketData)
 {
-    // Read-only feeds
-    public IListFeed<Stock> Watchlist => ListFeed.Async(MarketData.GetWatchlistAsync);
+    // Watchlist filtered by SearchQuery
+    public IFeed<IImmutableList<Stock>> Watchlist =>
+        SearchQuery.SelectAsync(async (query, ct) =>
+        {
+            var all = await MarketData.GetWatchlistAsync(ct);
+            if (string.IsNullOrWhiteSpace(query))
+                return all;
+            return (IImmutableList<Stock>)all
+                .Where(s => s.Ticker.Contains(query, StringComparison.OrdinalIgnoreCase)
+                          || s.Name.Contains(query, StringComparison.OrdinalIgnoreCase))
+                .ToImmutableList();
+        });
     public IListFeed<Holding> Holdings => ListFeed.Async(MarketData.GetHoldingsAsync);
     public IListFeed<Sector> Sectors => ListFeed.Async(MarketData.GetSectorsAsync);
     public IListFeed<VolumeBar> Volume => ListFeed.Async(MarketData.GetVolumeAsync);
