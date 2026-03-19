@@ -106,6 +106,12 @@ public sealed partial class DashboardPage : Page
         var pulsePhase = (_animationFrame % 43) / 43.0;
         var pulseOpacity = 0.85 + 0.15 * Math.Sin(pulsePhase * Math.PI * 2);
         GainPill.Opacity = pulseOpacity;
+
+        // Animate braille activity dots in watchlist rows (every 3rd tick ≈ 210ms)
+        if (_animationFrame % 3 == 0)
+        {
+            UpdateBrailleActivity();
+        }
     }
 
     private bool _tickerTapeInitialized;
@@ -176,30 +182,39 @@ public sealed partial class DashboardPage : Page
                 Stroke = new SolidColorPaint(color, 2.5f),
                 GeometrySize = 0,
                 LineSmoothness = 0.65,
+                YToolTipLabelFormatter = p =>
+                {
+                    var idx = (int)p.Index;
+                    var date = idx < dates.Length && DateTime.TryParse(dates[idx], out var dt)
+                        ? dt.ToString("MMM d, yyyy") : "";
+                    return string.IsNullOrEmpty(ticker)
+                        ? $"{date}\n${p.Model / 1000:N1}k"
+                        : $"{date}\n${p.Model:N2}";
+                },
             }
         };
 
-        // Format X axis: show ~5 evenly spaced date labels
-        var step = Math.Max(1, dates.Length / 5);
-        var xLabels = new string[dates.Length];
-        for (int i = 0; i < dates.Length; i++)
-        {
-            if (i % step == 0 && DateTime.TryParse(dates[i], out var dt))
-                xLabels[i] = dt.ToString("MMM d");
-            else
-                xLabels[i] = "";
-        }
+        // Tooltip styling: smaller, white background
+        PerformanceChart.TooltipBackgroundPaint = new SolidColorPaint(SKColors.White);
+        PerformanceChart.TooltipTextPaint = new SolidColorPaint(SKColor.Parse("#1A1A2E"));
+        PerformanceChart.TooltipTextSize = 11;
+
+        // Format X axis: show formatted date labels with proper step
+        var formattedDates = dates.Select(d =>
+            DateTime.TryParse(d, out var dt) ? dt.ToString("MMM d") : d).ToArray();
 
         PerformanceChart.XAxes = new Axis[]
         {
             new Axis
             {
-                Labels = xLabels,
+                Labels = formattedDates,
                 LabelsRotation = 0,
                 TextSize = 10,
                 LabelsPaint = new SolidColorPaint(SKColor.Parse("#C4C0B8")),
                 SeparatorsPaint = null,
                 ShowSeparatorLines = false,
+                ForceStepToMin = true,
+                MinStep = Math.Max(1, dates.Length / 6),
             }
         };
 
@@ -211,6 +226,7 @@ public sealed partial class DashboardPage : Page
                 LabelsPaint = new SolidColorPaint(SKColor.Parse("#C4C0B8")),
                 SeparatorsPaint = null,
                 ShowSeparatorLines = false,
+                MinLimit = null, // Let it auto-scale to fill
                 Labeler = val => string.IsNullOrEmpty(ticker)
                     ? $"${val / 1000:N0}k"
                     : $"${val:N0}",
@@ -393,6 +409,45 @@ public sealed partial class DashboardPage : Page
     private void OnRowPointerExited(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
     {
         if (sender is Border b) b.Background = TransparentBg;
+    }
+
+    // Braille activity animation for watchlist rows
+    private static readonly string[] BrailleActivityGlyphs = ["⠀", "⣀", "⣤", "⣴", "⣶", "⣷", "⣿"];
+    private int _brailleActivityFrame;
+
+    private void UpdateBrailleActivity()
+    {
+        _brailleActivityFrame++;
+        // Build a 6-char oscillating pattern with phase offsets
+        var sb = new System.Text.StringBuilder(6);
+        for (int i = 0; i < 6; i++)
+        {
+            var phase = (_brailleActivityFrame + i * 2) % (BrailleActivityGlyphs.Length * 2);
+            if (phase >= BrailleActivityGlyphs.Length)
+                phase = BrailleActivityGlyphs.Length * 2 - 1 - phase;
+            sb.Append(BrailleActivityGlyphs[Math.Clamp(phase, 0, BrailleActivityGlyphs.Length - 1)]);
+        }
+        var newText = sb.ToString();
+
+        // Walk visual tree to find all TextBlocks tagged "BrailleActivity"
+        FindAndUpdateTagged(this, "BrailleActivity", newText);
+    }
+
+    private static void FindAndUpdateTagged(DependencyObject parent, string tag, string text)
+    {
+        var count = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChildrenCount(parent);
+        for (int i = 0; i < count; i++)
+        {
+            var child = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChild(parent, i);
+            if (child is TextBlock tb && tb.Tag as string == tag)
+            {
+                tb.Text = text;
+            }
+            else
+            {
+                FindAndUpdateTagged(child, tag, text);
+            }
+        }
     }
 
     private void UpdateClock()
