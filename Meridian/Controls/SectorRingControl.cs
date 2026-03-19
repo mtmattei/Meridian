@@ -5,6 +5,11 @@ namespace Meridian.Controls;
 
 public sealed class SectorRingControl : SKXamlCanvas
 {
+    // ── Theme colors ──────────────────────────────────────────────────
+    private static readonly SKColor ColorTextPrimary = new(0x1A, 0x1A, 0x2E);
+    private static readonly SKColor ColorTextMuted = new(0x8A, 0x8A, 0x8A);
+
+    // ── Dependency properties ─────────────────────────────────────────
     public static readonly DependencyProperty SectorsProperty =
         DependencyProperty.Register(nameof(Sectors), typeof(IList<Sector>),
             typeof(SectorRingControl), new PropertyMetadata(null, OnDataChanged));
@@ -15,14 +20,64 @@ public sealed class SectorRingControl : SKXamlCanvas
         set => SetValue(SectorsProperty, value);
     }
 
+    // ── Hover state ───────────────────────────────────────────────────
     private int _hoveredIndex = -1;
     private readonly List<ArcHitZone> _arcZones = new();
+    private readonly List<float> _legendYPositions = new();
+    private float _legendX;
+
+    // ── Cached paints ─────────────────────────────────────────────────
+    private readonly SKPaint _arcPaint;
+    private readonly SKPaint _centerTextPaint;
+    private readonly SKPaint _centerSubPaint;
+    private readonly SKPaint _swatchPaint;
+    private readonly SKPaint _legendNamePaint;
+    private readonly SKPaint _legendPctPaint;
+
+    // ── Cached fonts ──────────────────────────────────────────────────
+    private readonly SKFont _centerFontDefault;
+    private readonly SKFont _centerFontHovered;
+    private readonly SKFont _subFontDefault;
+    private readonly SKFont _subFontHovered;
+    private readonly SKFont _legendNameFontNormal;
+    private readonly SKFont _legendNameFontBold;
+    private readonly SKFont _legendPctFont;
 
     private static void OnDataChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         => ((SectorRingControl)d).Invalidate();
 
     public SectorRingControl()
     {
+        // Arc paint (color set per segment in paint loop)
+        _arcPaint = new SKPaint
+        {
+            IsAntialias = true,
+            Style = SKPaintStyle.Stroke,
+            StrokeCap = SKStrokeCap.Round,
+        };
+
+        // Center text paints
+        _centerTextPaint = new SKPaint { IsAntialias = true, Color = ColorTextPrimary };
+        _centerSubPaint = new SKPaint { IsAntialias = true, Color = ColorTextMuted };
+
+        // Legend paints (color/alpha set per row)
+        _swatchPaint = new SKPaint { IsAntialias = true };
+        _legendNamePaint = new SKPaint { IsAntialias = true, Color = ColorTextPrimary };
+        _legendPctPaint = new SKPaint { IsAntialias = true, Color = ColorTextMuted };
+
+        // Fonts
+        var outfitSemiBold = SKTypeface.FromFamilyName("Outfit", SKFontStyleWeight.SemiBold, SKFontStyleWidth.Normal, SKFontStyleSlant.Upright);
+        var outfitNormal = SKTypeface.FromFamilyName("Outfit", SKFontStyleWeight.Normal, SKFontStyleWidth.Normal, SKFontStyleSlant.Upright);
+        var plexMono = SKTypeface.FromFamilyName("IBM Plex Mono");
+
+        _centerFontDefault = new SKFont(outfitSemiBold, 16);
+        _centerFontHovered = new SKFont(outfitSemiBold, 13);
+        _subFontDefault = new SKFont(outfitNormal, 9);
+        _subFontHovered = new SKFont(outfitNormal, 11);
+        _legendNameFontNormal = new SKFont(outfitNormal, 11);
+        _legendNameFontBold = new SKFont(outfitSemiBold, 11);
+        _legendPctFont = new SKFont(plexMono, 11);
+
         PaintSurface += OnPaintSurface;
         PointerMoved += OnPointerMoved;
         PointerExited += (_, _) => { _hoveredIndex = -1; Invalidate(); };
@@ -32,8 +87,6 @@ public sealed class SectorRingControl : SKXamlCanvas
     private void OnPointerMoved(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
     {
         var pos = e.GetCurrentPoint(this).Position;
-        var scaleX = _arcZones.Count > 0 ? ActualWidth : 1;
-        var scaleY = _arcZones.Count > 0 ? ActualHeight : 1;
 
         var newHovered = -1;
         for (int i = 0; i < _arcZones.Count; i++)
@@ -76,8 +129,6 @@ public sealed class SectorRingControl : SKXamlCanvas
     }
 
     private record struct ArcHitZone(float CenterX, float CenterY, float InnerRadius, float OuterRadius, float StartAngle, float SweepAngle);
-    private readonly List<float> _legendYPositions = new();
-    private float _legendX;
 
     private void OnPaintSurface(object? sender, SKPaintSurfaceEventArgs e)
     {
@@ -89,7 +140,11 @@ public sealed class SectorRingControl : SKXamlCanvas
 
         var w = e.Info.Width;
         var h = e.Info.Height;
-        var scale = (float)(w / ActualWidth);
+        if (w <= 0 || h <= 0) return;
+
+        var actualWidth = ActualWidth;
+        if (actualWidth <= 0) actualWidth = 1;
+        var scale = (float)(w / actualWidth);
 
         // Donut dimensions
         var ringSize = Math.Min(w * 0.42f, h * 0.8f);
@@ -120,16 +175,10 @@ public sealed class SectorRingControl : SKXamlCanvas
                 centerX + outerRadius + expand - sw / 2,
                 centerY + outerRadius + expand - sw / 2);
 
-            using var paint = new SKPaint
-            {
-                IsAntialias = true,
-                Style = SKPaintStyle.Stroke,
-                Color = color.WithAlpha(alpha),
-                StrokeWidth = sw,
-                StrokeCap = SKStrokeCap.Round,
-            };
+            _arcPaint.Color = color.WithAlpha(alpha);
+            _arcPaint.StrokeWidth = sw;
 
-            canvas.DrawArc(rect, startAngle, sweepAngle - 2, false, paint);
+            canvas.DrawArc(rect, startAngle, sweepAngle - 2, false, _arcPaint);
 
             // Store hit zone (in device-independent coords)
             _arcZones.Add(new ArcHitZone(
@@ -141,16 +190,15 @@ public sealed class SectorRingControl : SKXamlCanvas
         }
 
         // Center text — shows hovered sector or default
-        var centerLabel = _hoveredIndex >= 0 ? sectors[_hoveredIndex].Name : $"{sectors.Count}";
-        var centerSub = _hoveredIndex >= 0 ? $"{sectors[_hoveredIndex].Pct:F1}%" : "SECTORS";
+        var hasHover = _hoveredIndex >= 0 && _hoveredIndex < sectors.Count;
+        var centerLabel = hasHover ? sectors[_hoveredIndex].Name : $"{sectors.Count}";
+        var centerSub = hasHover ? $"{sectors[_hoveredIndex].Pct:F1}%" : "SECTORS";
 
-        using var centerFont = new SKFont(SKTypeface.FromFamilyName("Outfit", SKFontStyleWeight.SemiBold, SKFontStyleWidth.Normal, SKFontStyleSlant.Upright), _hoveredIndex >= 0 ? 13 : 16);
-        using var centerPaint = new SKPaint { IsAntialias = true, Color = SKColor.Parse("#1A1A2E") };
-        canvas.DrawText(centerLabel, centerX, centerY - 4, SKTextAlign.Center, centerFont, centerPaint);
+        var centerFont = hasHover ? _centerFontHovered : _centerFontDefault;
+        canvas.DrawText(centerLabel, centerX, centerY - 4, SKTextAlign.Center, centerFont, _centerTextPaint);
 
-        using var subFont = new SKFont(SKTypeface.FromFamilyName("Outfit"), _hoveredIndex >= 0 ? 11 : 9);
-        using var subPaint = new SKPaint { IsAntialias = true, Color = SKColor.Parse("#8A8A8A") };
-        canvas.DrawText(centerSub, centerX, centerY + 12, SKTextAlign.Center, subFont, subPaint);
+        var subFont = hasHover ? _subFontHovered : _subFontDefault;
+        canvas.DrawText(centerSub, centerX, centerY + 12, SKTextAlign.Center, subFont, _centerSubPaint);
 
         // Legend (right side)
         var legendX = centerX + outerRadius + 36;
@@ -164,16 +212,15 @@ public sealed class SectorRingControl : SKXamlCanvas
             var isHovered = i == _hoveredIndex;
             var alpha = (_hoveredIndex >= 0 && !isHovered) ? (byte)90 : (byte)255;
 
-            using var swatchPaint = new SKPaint { IsAntialias = true, Color = color.WithAlpha(alpha) };
-            canvas.DrawRoundRect(legendX, legendY - 6, 8, 8, 2, 2, swatchPaint);
+            _swatchPaint.Color = color.WithAlpha(alpha);
+            canvas.DrawRoundRect(legendX, legendY - 6, 8, 8, 2, 2, _swatchPaint);
 
-            using var nameFont = new SKFont(SKTypeface.FromFamilyName("Outfit", isHovered ? SKFontStyleWeight.SemiBold : SKFontStyleWeight.Normal, SKFontStyleWidth.Normal, SKFontStyleSlant.Upright), 11);
-            using var namePaint = new SKPaint { IsAntialias = true, Color = SKColor.Parse("#1A1A2E").WithAlpha(alpha) };
-            canvas.DrawText(sector.Name, legendX + 16, legendY + 2, SKTextAlign.Left, nameFont, namePaint);
+            var nameFont = isHovered ? _legendNameFontBold : _legendNameFontNormal;
+            _legendNamePaint.Color = ColorTextPrimary.WithAlpha(alpha);
+            canvas.DrawText(sector.Name, legendX + 16, legendY + 2, SKTextAlign.Left, nameFont, _legendNamePaint);
 
-            using var pctFont = new SKFont(SKTypeface.FromFamilyName("IBM Plex Mono"), 11);
-            using var pctPaint = new SKPaint { IsAntialias = true, Color = SKColor.Parse("#8A8A8A").WithAlpha(alpha) };
-            canvas.DrawText($"{sector.Pct:F1}%", w - 10, legendY + 2, SKTextAlign.Right, pctFont, pctPaint);
+            _legendPctPaint.Color = ColorTextMuted.WithAlpha(alpha);
+            canvas.DrawText($"{sector.Pct:F1}%", w - 10, legendY + 2, SKTextAlign.Right, _legendPctFont, _legendPctPaint);
 
             _legendYPositions.Add(legendY / scale);
             legendY += 22;

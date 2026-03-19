@@ -95,16 +95,16 @@
                     <Border HorizontalAlignment="Left" Width="50" IsHitTestVisible="False">
                         <Border.Background>
                             <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5">
-                                <GradientStop Color="#F6F4F0" Offset="0" />
-                                <GradientStop Color="#00F6F4F0" Offset="1" />
+                                <GradientStop Color="{StaticResource MeridianBackground}" Offset="0" />
+                                <GradientStop Color="{StaticResource MeridianBackgroundTransparent}" Offset="1" />
                             </LinearGradientBrush>
                         </Border.Background>
                     </Border>
                     <Border HorizontalAlignment="Right" Width="50" IsHitTestVisible="False">
                         <Border.Background>
                             <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5">
-                                <GradientStop Color="#00F6F4F0" Offset="0" />
-                                <GradientStop Color="#F6F4F0" Offset="1" />
+                                <GradientStop Color="{StaticResource MeridianBackgroundTransparent}" Offset="0" />
+                                <GradientStop Color="{StaticResource MeridianBackground}" Offset="1" />
                             </LinearGradientBrush>
                         </Border.Background>
                     </Border>
@@ -406,7 +406,7 @@
                                             <!-- Collapsed row -->
                                             <Border Padding="14,12,22,12"
                                                     BorderThickness="0,0,0,1"
-                                                    BorderBrush="#06000000"
+                                                    BorderBrush="{StaticResource MeridianRowSeparatorBrush}"
                                                     Tapped="OnWatchlistRowTapped"
                                                     PointerEntered="OnRowPointerEntered"
                                                     PointerExited="OnRowPointerExited">
@@ -626,7 +626,7 @@
     <!-- ═══════════ TRADE DRAWER OVERLAY ═══════════ -->
     <!-- Backdrop -->
     <Border x:Name="DrawerBackdrop" Visibility="Collapsed"
-            Background="#40000000"
+            Background="{StaticResource MeridianBackdropBrush}"
             Tapped="OnDrawerBackdropTapped" />
 
     <!-- Drawer (right-aligned) -->

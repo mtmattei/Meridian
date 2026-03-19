@@ -1,22 +1,28 @@
 using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Media;
-using Windows.UI;
 
 namespace Meridian.Presentation;
 
 public sealed class GainLossBrushConverter : IValueConverter
 {
-    private static readonly SolidColorBrush Gain = new(Color.FromArgb(0xFF, 0x2D, 0x6A, 0x4F));
-    private static readonly SolidColorBrush Loss = new(Color.FromArgb(0xFF, 0xB5, 0x34, 0x2B));
+    // Lazy-loaded from theme resources for consistency
+    private static SolidColorBrush? _gain;
+    private static SolidColorBrush? _loss;
+
+    private static SolidColorBrush GainBrush =>
+        _gain ??= (SolidColorBrush)Application.Current.Resources["MeridianGainBrush"];
+
+    private static SolidColorBrush LossBrush =>
+        _loss ??= (SolidColorBrush)Application.Current.Resources["MeridianLossBrush"];
 
     public object Convert(object value, Type targetType, object parameter, string language)
     {
         return value switch
         {
-            bool b => b ? Gain : Loss,
-            decimal d => d >= 0 ? Gain : Loss,
-            double d => d >= 0 ? Gain : Loss,
-            _ => Gain
+            bool b => b ? GainBrush : LossBrush,
+            decimal d => d >= 0 ? GainBrush : LossBrush,
+            double d => d >= 0 ? GainBrush : LossBrush,
+            _ => GainBrush
         };
     }
 

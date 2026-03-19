@@ -80,6 +80,10 @@
   <Color x:Key="MeridianGainBgTint">#0D2D6A4F</Color>
   <Color x:Key="MeridianLossBgTint">#0DB5342B</Color>
   <Color x:Key="MeridianAccentBgTint">#0DC9A96E</Color>
+  <Color x:Key="MeridianBackdrop">#40000000</Color>
+  <Color x:Key="MeridianRowSeparator">#0A000000</Color>
+  <Color x:Key="MeridianBackgroundTransparent">#00F6F4F0</Color>
+  <Color x:Key="MeridianSubmitDisabled">#E0DCD5</Color>
 
   <!-- ═══ Meridian Semantic Brushes ═══ -->
   <SolidColorBrush x:Key="MeridianBackgroundBrush" Color="{StaticResource MeridianBackground}" />
@@ -96,4 +100,7 @@
   <SolidColorBrush x:Key="MeridianGainBgTintBrush" Color="{StaticResource MeridianGainBgTint}" />
   <SolidColorBrush x:Key="MeridianLossBgTintBrush" Color="{StaticResource MeridianLossBgTint}" />
   <SolidColorBrush x:Key="MeridianAccentBgTintBrush" Color="{StaticResource MeridianAccentBgTint}" />
+  <SolidColorBrush x:Key="MeridianBackdropBrush" Color="{StaticResource MeridianBackdrop}" />
+  <SolidColorBrush x:Key="MeridianRowSeparatorBrush" Color="{StaticResource MeridianRowSeparator}" />
+  <SolidColorBrush x:Key="MeridianSubmitDisabledBrush" Color="{StaticResource MeridianSubmitDisabled}" />
 </ResourceDictionary>

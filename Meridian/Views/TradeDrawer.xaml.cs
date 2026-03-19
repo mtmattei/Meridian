@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Meridian.Models;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -27,14 +28,20 @@ public sealed partial class TradeDrawer : UserControl
     {
         this.InitializeComponent();
 
-        CloseButton.Click += (_, _) => CloseRequested?.Invoke(this, EventArgs.Empty);
+        CloseButton.Click += (_, _) =>
+        {
+            StopAndDisposeTimer();
+            CloseRequested?.Invoke(this, EventArgs.Empty);
+        };
         BuyButton.Click += (_, _) => SetSide(true);
         SellButton.Click += (_, _) => SetSide(false);
         MarketButton.Click += (_, _) => SetOrderType("market");
         LimitButton.Click += (_, _) => SetOrderType("limit");
         StopButton.Click += (_, _) => SetOrderType("stop");
-        QuantityInput.TextChanged += (_, _) => UpdatePreview();
+        QuantityInput.TextChanged += OnQuantityTextChanged;
+        QuantityInput.BeforeTextChanging += OnQuantityBeforeTextChanging;
         SubmitButton.Click += (_, _) => Submit();
+        Unloaded += OnUnloaded;
 
         // Quick select buttons
         foreach (var child in QuickSelectPanel.Children)
@@ -50,6 +57,37 @@ public sealed partial class TradeDrawer : UserControl
         }
 
         SetSide(true);
+    }
+
+    private void OnUnloaded(object sender, RoutedEventArgs e)
+    {
+        StopAndDisposeTimer();
+    }
+
+    private void StopAndDisposeTimer()
+    {
+        if (_autoCloseTimer is not null)
+        {
+            _autoCloseTimer.Stop();
+            _autoCloseTimer = null;
+        }
+    }
+
+    private void OnQuantityBeforeTextChanging(TextBox sender, TextBoxBeforeTextChangingEventArgs args)
+    {
+        // Reject any text that is not a valid non-negative integer within range
+        if (string.IsNullOrEmpty(args.NewText))
+            return;
+
+        if (!int.TryParse(args.NewText, out var value) || value < 0 || value > 99999)
+        {
+            args.Cancel = true;
+        }
+    }
+
+    private void OnQuantityTextChanged(object sender, TextChangedEventArgs e)
+    {
+        UpdatePreview();
     }
 
     public void SetStock(Stock stock)
@@ -74,6 +112,7 @@ public sealed partial class TradeDrawer : UserControl
         SetOrderType("market");
         FormPanel.Visibility = Visibility.Visible;
         ConfirmationPanel.Visibility = Visibility.Collapsed;
+        StopAndDisposeTimer();
         UpdatePreview();
     }
 
@@ -138,24 +177,34 @@ public sealed partial class TradeDrawer : UserControl
 
     private void Submit()
     {
-        if (_stock == null) return;
-
-        var qty = int.TryParse(QuantityInput.Text, out var q) ? q : 0;
-        if (qty <= 0) return;
-
-        var side = _isBuy ? "Buy" : "Sell";
-        ConfirmationSummary.Text = $"{side} {qty} {_stock.Ticker} @ {(_orderType == "market" ? "Market" : "Limit")}";
-
-        FormPanel.Visibility = Visibility.Collapsed;
-        ConfirmationPanel.Visibility = Visibility.Visible;
-
-        // Auto-close after 1.8s
-        _autoCloseTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1.8) };
-        _autoCloseTimer.Tick += (_, _) =>
+        try
         {
-            _autoCloseTimer.Stop();
-            CloseRequested?.Invoke(this, EventArgs.Empty);
-        };
-        _autoCloseTimer.Start();
+            if (_stock == null) return;
+
+            var qty = int.TryParse(QuantityInput.Text, out var q) ? q : 0;
+            if (qty <= 0) return;
+
+            var side = _isBuy ? "Buy" : "Sell";
+            ConfirmationSummary.Text = $"{side} {qty} {_stock.Ticker} @ {(_orderType == "market" ? "Market" : "Limit")}";
+
+            FormPanel.Visibility = Visibility.Collapsed;
+            ConfirmationPanel.Visibility = Visibility.Visible;
+
+            // Dispose any existing timer before creating a new one
+            StopAndDisposeTimer();
+
+            // Auto-close after 1.8s
+            _autoCloseTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1.8) };
+            _autoCloseTimer.Tick += (_, _) =>
+            {
+                StopAndDisposeTimer();
+                CloseRequested?.Invoke(this, EventArgs.Empty);
+            };
+            _autoCloseTimer.Start();
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"TradeDrawer.Submit failed: {ex}");
+        }
     }
 }

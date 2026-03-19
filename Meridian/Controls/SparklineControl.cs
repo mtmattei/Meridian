@@ -5,6 +5,11 @@ namespace Meridian.Controls;
 
 public sealed class SparklineControl : SKXamlCanvas
 {
+    // ── Theme colors ──────────────────────────────────────────────────
+    private static readonly SKColor ColorGain = new(0x2D, 0x6A, 0x4F);
+    private static readonly SKColor ColorLoss = new(0xB5, 0x34, 0x2B);
+
+    // ── Dependency properties ─────────────────────────────────────────
     public static readonly DependencyProperty PointsProperty =
         DependencyProperty.Register(nameof(Points), typeof(IList<double>),
             typeof(SparklineControl), new PropertyMetadata(null, OnDataChanged));
@@ -25,14 +30,49 @@ public sealed class SparklineControl : SKXamlCanvas
         set => SetValue(IsPositiveProperty, value);
     }
 
+    // ── Cached paints ─────────────────────────────────────────────────
+    private readonly SKPaint _strokePaint;
+    private readonly SKPaint _fillPaint;
+    private bool _lastIsPositive = true;
+
     private static void OnDataChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         => ((SparklineControl)d).Invalidate();
 
     public SparklineControl()
     {
+        _strokePaint = new SKPaint
+        {
+            IsAntialias = true,
+            Style = SKPaintStyle.Stroke,
+            Color = ColorGain,
+            StrokeWidth = 1.5f,
+            StrokeCap = SKStrokeCap.Round,
+            StrokeJoin = SKStrokeJoin.Round,
+        };
+
+        _fillPaint = new SKPaint
+        {
+            IsAntialias = true,
+        };
+
         PaintSurface += OnPaintSurface;
         Width = 72;
         Height = 30;
+    }
+
+    private void RebuildPaintsForPolarity(bool isPositive, float height)
+    {
+        var color = isPositive ? ColorGain : ColorLoss;
+
+        _strokePaint.Color = color;
+
+        _fillPaint.Shader?.Dispose();
+        _fillPaint.Shader = SKShader.CreateLinearGradient(
+            new SKPoint(0, 0), new SKPoint(0, height),
+            new[] { color.WithAlpha(50), color.WithAlpha(0) },
+            SKShaderTileMode.Clamp);
+
+        _lastIsPositive = isPositive;
     }
 
     private void OnPaintSurface(object? sender, SKPaintSurfaceEventArgs e)
@@ -45,10 +85,21 @@ public sealed class SparklineControl : SKXamlCanvas
 
         var w = e.Info.Width;
         var h = e.Info.Height;
+        if (w <= 0 || h <= 0) return;
+
         var padding = 2f;
-        var color = IsPositive
-            ? SKColor.Parse("#2D6A4F")
-            : SKColor.Parse("#B5342B");
+        var isPositive = IsPositive;
+
+        // Rebuild paints only when polarity changes (gradient needs height too)
+        if (isPositive != _lastIsPositive)
+        {
+            RebuildPaintsForPolarity(isPositive, h);
+        }
+        else
+        {
+            // Always refresh gradient when height changes (cheap check)
+            RebuildPaintsForPolarity(isPositive, h);
+        }
 
         var min = points.Min();
         var max = points.Max();
@@ -70,26 +121,10 @@ public sealed class SparklineControl : SKXamlCanvas
         areaPath.LineTo(padding, h);
         areaPath.Close();
 
-        using var fillPaint = new SKPaint
-        {
-            IsAntialias = true,
-            Shader = SKShader.CreateLinearGradient(
-                new SKPoint(0, 0), new SKPoint(0, h),
-                new[] { color.WithAlpha(50), color.WithAlpha(0) },
-                SKShaderTileMode.Clamp)
-        };
-        canvas.DrawPath(areaPath, fillPaint);
+        canvas.DrawPath(areaPath, _fillPaint);
+        canvas.DrawPath(path, _strokePaint);
 
-        // Stroke
-        using var strokePaint = new SKPaint
-        {
-            IsAntialias = true,
-            Style = SKPaintStyle.Stroke,
-            Color = color,
-            StrokeWidth = 1.5f,
-            StrokeCap = SKStrokeCap.Round,
-            StrokeJoin = SKStrokeJoin.Round,
-        };
-        canvas.DrawPath(path, strokePaint);
+        areaPath.Dispose();
+        path.Dispose();
     }
 }

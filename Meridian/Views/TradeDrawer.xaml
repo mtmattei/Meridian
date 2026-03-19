@@ -41,7 +41,8 @@
                                 CornerRadius="8" VerticalAlignment="Top"
                                 Background="Transparent"
                                 BorderThickness="1"
-                                BorderBrush="{StaticResource MeridianBorderBrush}" />
+                                BorderBrush="{StaticResource MeridianBorderBrush}"
+                                AutomationProperties.Name="Close trade drawer" />
                     </Grid>
 
                     <!-- Buy/Sell Toggle -->
@@ -55,12 +56,14 @@
                             <Button x:Name="BuyButton" Grid.Column="0"
                                     Content="BUY" HorizontalAlignment="Stretch"
                                     FontSize="13" FontWeight="Bold" Padding="0,10"
-                                    CornerRadius="10" />
+                                    CornerRadius="10"
+                                    AutomationProperties.Name="Buy" />
                             <Button x:Name="SellButton" Grid.Column="1"
                                     Content="SELL" HorizontalAlignment="Stretch"
                                     FontSize="13" FontWeight="Bold" Padding="0,10"
                                     CornerRadius="10"
-                                    Background="Transparent" />
+                                    Background="Transparent"
+                                    AutomationProperties.Name="Sell" />
                         </Grid>
                     </Border>
 
@@ -72,29 +75,35 @@
                                  FontFamily="{StaticResource IBMPlexMonoFont}"
                                  FontSize="18" TextAlignment="Center"
                                  CornerRadius="12" Padding="16,12"
-                                 InputScope="Number" />
+                                 InputScope="Number"
+                                 AutomationProperties.Name="Share quantity" />
                         <!-- Quick select -->
                         <StackPanel x:Name="QuickSelectPanel" Orientation="Horizontal" Spacing="6">
                             <Button Content="1" Tag="1" FontSize="11" Padding="12,6"
                                     CornerRadius="8" BorderThickness="1"
                                     BorderBrush="{StaticResource MeridianBorderBrush}"
-                                    Background="Transparent" />
+                                    Background="Transparent"
+                                    AutomationProperties.Name="Buy 1 share" />
                             <Button Content="5" Tag="5" FontSize="11" Padding="12,6"
                                     CornerRadius="8" BorderThickness="1"
                                     BorderBrush="{StaticResource MeridianBorderBrush}"
-                                    Background="Transparent" />
+                                    Background="Transparent"
+                                    AutomationProperties.Name="Buy 5 shares" />
                             <Button Content="10" Tag="10" FontSize="11" Padding="12,6"
                                     CornerRadius="8" BorderThickness="1"
                                     BorderBrush="{StaticResource MeridianBorderBrush}"
-                                    Background="Transparent" />
+                                    Background="Transparent"
+                                    AutomationProperties.Name="Buy 10 shares" />
                             <Button Content="25" Tag="25" FontSize="11" Padding="12,6"
                                     CornerRadius="8" BorderThickness="1"
                                     BorderBrush="{StaticResource MeridianBorderBrush}"
-                                    Background="Transparent" />
+                                    Background="Transparent"
+                                    AutomationProperties.Name="Buy 25 shares" />
                             <Button Content="100" Tag="100" FontSize="11" Padding="12,6"
                                     CornerRadius="8" BorderThickness="1"
                                     BorderBrush="{StaticResource MeridianBorderBrush}"
-                                    Background="Transparent" />
+                                    Background="Transparent"
+                                    AutomationProperties.Name="Buy 100 shares" />
                         </StackPanel>
                     </StackPanel>
 
@@ -107,17 +116,20 @@
                                     BorderThickness="1"
                                     BorderBrush="{StaticResource MeridianAccentBrush}"
                                     Foreground="{StaticResource MeridianAccentBrush}"
-                                    Background="{StaticResource MeridianAccentBgTintBrush}" />
+                                    Background="{StaticResource MeridianAccentBgTintBrush}"
+                                    AutomationProperties.Name="Market order" />
                             <Button x:Name="LimitButton" Content="Limit"
                                     FontSize="12" Padding="16,8" CornerRadius="8"
                                     BorderThickness="1"
                                     BorderBrush="{StaticResource MeridianBorderBrush}"
-                                    Background="Transparent" />
+                                    Background="Transparent"
+                                    AutomationProperties.Name="Limit order" />
                             <Button x:Name="StopButton" Content="Stop"
                                     FontSize="12" Padding="16,8" CornerRadius="8"
                                     BorderThickness="1"
                                     BorderBrush="{StaticResource MeridianBorderBrush}"
-                                    Background="Transparent" />
+                                    Background="Transparent"
+                                    AutomationProperties.Name="Stop order" />
                         </StackPanel>
                         <!-- Limit/Stop price input (hidden for Market) -->
                         <StackPanel x:Name="LimitPricePanel" Visibility="Collapsed" Spacing="4">
@@ -163,7 +175,8 @@
                             FontSize="14" FontWeight="Bold"
                             Padding="0,14" CornerRadius="12"
                             Foreground="White"
-                            Content="Enter quantity" IsEnabled="False" />
+                            Content="Enter quantity" IsEnabled="False"
+                            AutomationProperties.Name="Submit order" />
                 </StackPanel>
             </ScrollViewer>
 
