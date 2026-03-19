@@ -188,7 +188,13 @@ public class MockMarketDataService : IMarketDataService
 			new StreamTicker("MSFT", "$468.21", "+1.12%", true),
 			new StreamTicker("GOOGL", "$142.58", "-0.86%", false),
 			new StreamTicker("META", "$350.42", "+2.50%", true),
-			new StreamTicker("TSLA", "$248.92", "+5.28%", true));
+			new StreamTicker("TSLA", "$248.92", "+5.28%", true),
+			new StreamTicker("AMZN", "$178.32", "-1.35%", false),
+			new StreamTicker("JPM", "$195.84", "+1.10%", true),
+			new StreamTicker("V", "$281.45", "+0.78%", true),
+			new StreamTicker("UNH", "$524.60", "-0.42%", false),
+			new StreamTicker("HD", "$362.18", "+0.95%", true),
+			new StreamTicker("DIS", "$112.34", "+1.82%", true));
 
 	// ── Helper: seeded random walk that hits exact start/end values ─────
 

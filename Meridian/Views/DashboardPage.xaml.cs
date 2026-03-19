@@ -1,6 +1,5 @@
-using LiveChartsCore;
-using LiveChartsCore.SkiaSharpView;
-using LiveChartsCore.SkiaSharpView.Painting;
+using Liveline;
+using Liveline.Models;
 using Meridian.Presentation;
 using Meridian.Services;
 using Microsoft.UI.Xaml.Input;
@@ -8,7 +7,6 @@ using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Text;
 using Microsoft.UI.Xaml.Documents;
-using SkiaSharp;
 
 namespace Meridian.Views;
 
@@ -28,28 +26,6 @@ public sealed partial class DashboardPage : Page
     // Cached braille TextBlock references (avoids visual tree walk every tick)
     private readonly List<TextBlock> _brailleActivityBlocks = new();
     private bool _brailleBlocksCached;
-
-    // ── Theme colors (from resources, not hardcoded) ──
-    private static readonly SKColor GainColor = new(0x2D, 0x6A, 0x4F);
-    private static readonly SKColor LossColor = new(0xB5, 0x34, 0x2B);
-    private static readonly SKColor AxisLabelColor = new(0xC4, 0xC0, 0xB8);
-    private static readonly SKColor TooltipTextColor = new(0x1A, 0x1A, 0x2E);
-    private static readonly SKColor TooltipDateColor = new(0x9C, 0x98, 0x90);
-
-    // Tooltip font (loaded once from embedded font file)
-    private static SKTypeface? _tooltipTypeface;
-    private static SKTypeface GetTooltipTypeface()
-    {
-        if (_tooltipTypeface != null) return _tooltipTypeface;
-        try
-        {
-            var fontPath = Path.Combine(AppContext.BaseDirectory, "Assets", "Fonts", "IBM_Plex_Mono", "IBMPlexMono-SemiBold.ttf");
-            if (File.Exists(fontPath))
-                _tooltipTypeface = SKTypeface.FromFile(fontPath);
-        }
-        catch { /* fallback to default */ }
-        return _tooltipTypeface ?? SKTypeface.Default;
-    }
 
     // Hover brushes (lazy from resources)
     private static SolidColorBrush? _hoverBorderBrush;
@@ -359,7 +335,8 @@ public sealed partial class DashboardPage : Page
 
     private bool _tickerTapeInitialized;
     private bool _useLiveData;
-    private double _cachedSegmentWidth;
+    private double _tickerWidth;
+    private bool _tickerPositioned;
     private double _cachedFooterSegmentWidth;
 
     private void BuildTickerTapeText()
@@ -368,22 +345,18 @@ public sealed partial class DashboardPage : Page
             ? _finnhub.GetLatestQuotes()
             : (IReadOnlyList<StreamTicker>)_marketData.GetStreamTickers();
 
-        // Plain text — 50x repeat for ~15min scroll without any reset/loop
+        // Build ticker text for dual-TextBlock marquee (A + B leapfrog)
         var segment = new System.Text.StringBuilder();
         foreach (var t in tickers)
             segment.Append($"⣤⣴⣶⣷ {t.Ticker}  {t.Price}  {t.Delta}   │   ");
 
-        var oneSegment = segment.ToString();
-        var sb = new System.Text.StringBuilder(oneSegment.Length * 50);
-        for (int i = 0; i < 50; i++)
-            sb.Append(oneSegment);
+        var tickerText = segment.ToString();
+        TickerTapeTextA.Text = tickerText;
+        TickerTapeTextB.Text = tickerText;
 
-        TickerTapeText.Text = sb.ToString();
-        // Reset scroll position on content rebuild (live data change is natural content swap)
-        TickerTranslate.X = 0;
-
-        // Reset cached widths on rebuild (new content may differ)
-        _cachedSegmentWidth = 0;
+        // Force re-measure on next frame
+        _tickerWidth = 0;
+        _tickerPositioned = false;
         _cachedFooterSegmentWidth = 0;
 
         // Also populate footer ticker
@@ -421,11 +394,34 @@ public sealed partial class DashboardPage : Page
     private void UpdateTickerScroll()
     {
         InitTickerTape();
-        // Continuous scroll — no reset, no loop. 50x buffer lasts ~15 minutes.
-        // Live data updates rebuild the text and reset position naturally.
-        TickerTranslate.X -= 0.95;
 
-        // Footer ticker scroll (slower pace, same no-reset approach)
+        // Measure once after layout
+        if (_tickerWidth <= 0)
+        {
+            var w = TickerTapeTextA.ActualWidth;
+            if (w > 50) _tickerWidth = w;
+            else return;
+        }
+
+        // Position B right after A on first valid measurement
+        if (!_tickerPositioned)
+        {
+            _tickerPositioned = true;
+            TickerTranslateA.X = 0;
+            TickerTranslateB.X = _tickerWidth;
+        }
+
+        // Scroll both TextBlocks left
+        TickerTranslateA.X -= 0.95;
+        TickerTranslateB.X -= 0.95;
+
+        // Leapfrog: when fully off-screen left, jump behind the other
+        if (TickerTranslateA.X < -_tickerWidth)
+            TickerTranslateA.X = TickerTranslateB.X + _tickerWidth;
+        if (TickerTranslateB.X < -_tickerWidth)
+            TickerTranslateB.X = TickerTranslateA.X + _tickerWidth;
+
+        // Footer ticker scroll
         FooterTickerTranslate.X -= 0.29;
     }
 
@@ -480,7 +476,7 @@ public sealed partial class DashboardPage : Page
             tb.Text = text;
     }
 
-    // ── Chart ─────────────────────────────────────────────────────────
+    // ── Chart (Liveline) ──────────────────────────────────────────────
 
     private async Task LoadChartAsync(string? ticker)
     {
@@ -494,98 +490,29 @@ public sealed partial class DashboardPage : Page
 
             if (points.Count == 0) return;
 
-            var values = points.Select(p => (double)p.Value).ToArray();
-            var dates = points.Select(p => p.Date).ToArray();
-
-            var isPositive = values.Length >= 2 && values[^1] >= values[0];
-            var color = isPositive ? GainColor : LossColor;
-            var axisLabelPaint = new SolidColorPaint(AxisLabelColor);
-
-            // Gradient fill under the line chart (not the container)
-            var gradientFill = new LiveChartsCore.SkiaSharpView.Painting.LinearGradientPaint(
-                new[] { color.WithAlpha(60), color.WithAlpha(5) },
-                new SKPoint(0, 0), new SKPoint(0, 1));
-
-            PerformanceChart.AnimationsSpeed = TimeSpan.FromMilliseconds(800);
-            PerformanceChart.Series = new ISeries[]
+            // Convert to Liveline data points
+            var livelineData = new List<LivelinePoint>(points.Count);
+            foreach (var p in points)
             {
-                new LineSeries<double>
-                {
-                    Values = values,
-                    Fill = gradientFill,
-                    Stroke = new SolidColorPaint(color, 2.5f),
-                    GeometrySize = 0,
-                    LineSmoothness = 0.65,
-                    YToolTipLabelFormatter = p =>
-                    {
-                        var idx = (int)p.Index;
-                        var date = idx < dates.Length && DateTime.TryParse(dates[idx], out var dt)
-                            ? dt.ToString("MMM d, yyyy") : "";
-                        var value = string.IsNullOrEmpty(ticker)
-                            ? $"${p.Model / 1000:N1}k"
-                            : $"${p.Model:N2}";
-                        return $"{date}\n{value}";
-                    },
-                }
+                var dt = DateTime.TryParse(p.Date, out var parsed)
+                    ? new DateTimeOffset(parsed) : DateTimeOffset.Now;
+                livelineData.Add(new LivelinePoint(dt, (double)p.Value));
+            }
+
+            var lastValue = (double)points[^1].Value;
+            var isPositive = points.Count >= 2 && points[^1].Value >= points[0].Value;
+
+            // Set theme color based on gain/loss
+            LivelineChart.Theme = new LivelineTheme
+            {
+                Color = isPositive ? "#2D6A4F" : "#B5342B",
+                IsDark = false
             };
 
-            PerformanceChart.TooltipBackgroundPaint = new SolidColorPaint(SKColors.White);
-            PerformanceChart.TooltipTextPaint = new SolidColorPaint(TooltipTextColor)
-            {
-                SKTypeface = GetTooltipTypeface()
-            };
-            PerformanceChart.TooltipTextSize = 13;
-
-            // Parse dates for X axis labeling
-            var parsedDates = dates.Select(d =>
-                DateTime.TryParse(d, out var dt) ? dt : DateTime.MinValue).ToArray();
-
-            PerformanceChart.XAxes = new Axis[]
-            {
-                new Axis
-                {
-                    LabelsRotation = 0,
-                    TextSize = 10,
-                    LabelsPaint = axisLabelPaint,
-                    SeparatorsPaint = null,
-                    ShowSeparatorLines = false,
-                    MinStep = 1,
-                    Labeler = val =>
-                    {
-                        var idx = (int)Math.Round(val);
-                        if (idx < 0 || idx >= parsedDates.Length) return "";
-                        // Show label only at evenly spaced intervals (~6 labels)
-                        var step = Math.Max(1, parsedDates.Length / 6);
-                        if (idx % step != 0 && idx != parsedDates.Length - 1) return "";
-                        var dt = parsedDates[idx];
-                        return dt == DateTime.MinValue ? "" : dt.ToString("MMM d");
-                    },
-                }
-            };
-
-            var yMin = values.Min();
-            var yMax = values.Max();
-            var yRange = yMax - yMin;
-            var yPad = yRange * 0.02;
-            var yStep = yRange > 0 ? yRange / 4.0 : 1;
-
-            PerformanceChart.YAxes = new Axis[]
-            {
-                new Axis
-                {
-                    TextSize = 10,
-                    LabelsPaint = axisLabelPaint,
-                    SeparatorsPaint = null,
-                    ShowSeparatorLines = false,
-                    MinLimit = yMin - yPad,
-                    MaxLimit = yMax + yPad,
-                    MinStep = yStep,
-                    ForceStepToMin = true,
-                    Labeler = val => string.IsNullOrEmpty(ticker)
-                        ? $"${val / 1000:N0}k"
-                        : $"${val:N0}",
-                }
-            };
+            // Push data — Liveline handles smooth lerp animation
+            LivelineChart.Data = livelineData;
+            LivelineChart.Value = lastValue;
+            LivelineChart.IsLoading = false;
 
             UpdateChartHeader(ticker);
         }
@@ -602,7 +529,7 @@ public sealed partial class DashboardPage : Page
             ChartLabel.Text = "PERFORMANCE";
             StockDetailPanel.Visibility = Visibility.Collapsed;
             BackButton.Visibility = Visibility.Collapsed;
-            PerformanceChart.Height = 240; // Restore full height for portfolio mode
+            LivelineChart.Height = 240; // Restore full height for portfolio mode
             return;
         }
 
@@ -623,7 +550,7 @@ public sealed partial class DashboardPage : Page
             BackButton.Visibility = Visibility.Visible;
 
             // Reduce chart height for stock detail mode (210px vs 240px)
-            PerformanceChart.Height = 210;
+            LivelineChart.Height = 210;
         }
         catch (Exception ex)
         {

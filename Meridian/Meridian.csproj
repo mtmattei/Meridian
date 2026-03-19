@@ -35,6 +35,7 @@
 
   <ItemGroup>
     <PackageReference Include="LiveChartsCore.SkiaSharpView.Uno.WinUI" />
+    <ProjectReference Include="..\Liveline\Liveline.csproj" />
   </ItemGroup>
 
 </Project>

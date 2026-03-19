@@ -3,6 +3,7 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:utu="using:Uno.Toolkit.UI"
       xmlns:lvc="using:LiveChartsCore.SkiaSharpView.WinUI"
+      xmlns:ll="using:Liveline"
       xmlns:controls="using:Meridian.Controls"
       xmlns:views="using:Meridian.Views"
       xmlns:converters="using:Meridian.Presentation"
@@ -77,24 +78,27 @@
                     BorderThickness="0,1"
                     BorderBrush="{StaticResource MeridianBorderBrush}">
                 <Grid x:Name="TickerTapeContainer">
-                    <!-- Clipping ScrollViewer prevents text from overflowing -->
-                    <ScrollViewer HorizontalScrollBarVisibility="Hidden"
-                                  VerticalScrollBarVisibility="Disabled"
-                                  HorizontalScrollMode="Disabled"
-                                  VerticalScrollMode="Disabled"
-                                  IsTabStop="False">
-                        <TextBlock x:Name="TickerTapeText"
-                                   AutomationProperties.AccessibilityView="Raw"
-                                   FontFamily="{StaticResource IBMPlexMonoFont}"
-                                   FontSize="11"
-                                   Foreground="{StaticResource MeridianGainBrush}"
-                                   MaxLines="1"
-                                   TextTrimming="None">
-                            <TextBlock.RenderTransform>
-                                <TranslateTransform x:Name="TickerTranslate" />
-                            </TextBlock.RenderTransform>
-                        </TextBlock>
-                    </ScrollViewer>
+                    <!-- Dual-TextBlock marquee: A and B leapfrog for seamless infinite scroll -->
+                    <TextBlock x:Name="TickerTapeTextA"
+                               AutomationProperties.AccessibilityView="Raw"
+                               FontFamily="{StaticResource IBMPlexMonoFont}"
+                               FontSize="11"
+                               Foreground="{StaticResource MeridianGainBrush}"
+                               MaxLines="1" TextTrimming="None">
+                        <TextBlock.RenderTransform>
+                            <TranslateTransform x:Name="TickerTranslateA" />
+                        </TextBlock.RenderTransform>
+                    </TextBlock>
+                    <TextBlock x:Name="TickerTapeTextB"
+                               AutomationProperties.AccessibilityView="Raw"
+                               FontFamily="{StaticResource IBMPlexMonoFont}"
+                               FontSize="11"
+                               Foreground="{StaticResource MeridianGainBrush}"
+                               MaxLines="1" TextTrimming="None">
+                        <TextBlock.RenderTransform>
+                            <TranslateTransform x:Name="TickerTranslateB" />
+                        </TextBlock.RenderTransform>
+                    </TextBlock>
                     <!-- Fade edges: match page background color -->
                     <Border HorizontalAlignment="Left" Width="50" IsHitTestVisible="False">
                         <Border.Background>
@@ -294,12 +298,15 @@
                                 </StackPanel>
                             </Grid>
 
-                            <!-- LiveCharts2 area chart -->
-                            <lvc:CartesianChart x:Name="PerformanceChart"
-                                                Height="240"
-                                                TooltipPosition="Top"
-                                                ZoomMode="None"
-                                                AutomationProperties.Name="Portfolio performance chart, 3 month view" />
+                            <!-- Liveline animated chart -->
+                            <ll:LivelineChart x:Name="LivelineChart"
+                                              Height="240"
+                                              ShowGrid="True"
+                                              ShowBadge="True"
+                                              ShowFill="True"
+                                              LerpSpeed="0.04"
+                                              Momentum="True"
+                                              AutomationProperties.Name="Portfolio performance chart, 3 month view" />
                         </StackPanel>
                     </Border>
 
