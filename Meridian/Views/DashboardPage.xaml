@@ -342,19 +342,27 @@
                                                             <RowDefinition Height="Auto" />
                                                         </Grid.RowDefinitions>
 
-                                                        <!-- Row 0: Ticker + shares×avg + market value -->
-                                                        <TextBlock Grid.Row="0" Grid.Column="0"
-                                                                   FontFamily="{StaticResource OutfitFont}"
-                                                                   FontSize="14" FontWeight="Bold">
-                                                            <Run Text="{Binding Ticker}" />
-                                                            <Run Text="  " />
-                                                            <Run Text="{Binding Shares}" FontSize="10"
-                                                                 Foreground="{StaticResource MeridianTextSubtleBrush}" />
-                                                            <Run Text=" × $" FontSize="10"
-                                                                 Foreground="{StaticResource MeridianTextSubtleBrush}" />
-                                                            <Run Text="{Binding AvgCost}" FontSize="10"
-                                                                 Foreground="{StaticResource MeridianTextSubtleBrush}" />
-                                                        </TextBlock>
+                                                        <!-- Row 0: Ticker + active dot + shares×avg + market value -->
+                                                        <StackPanel Grid.Row="0" Grid.Column="0"
+                                                                    Orientation="Horizontal" Spacing="0"
+                                                                    VerticalAlignment="Center">
+                                                            <TextBlock FontFamily="{StaticResource OutfitFont}"
+                                                                       FontSize="14" FontWeight="Bold"
+                                                                       Text="{Binding Ticker}" />
+                                                            <!-- Pulsing green dot when selected -->
+                                                            <Border Tag="ActiveDot" Visibility="Collapsed"
+                                                                    Width="7" Height="7" CornerRadius="4"
+                                                                    Background="{StaticResource MeridianGainBrush}"
+                                                                    VerticalAlignment="Center" Margin="6,0,0,0" />
+                                                            <TextBlock FontFamily="{StaticResource OutfitFont}"
+                                                                       FontSize="10" VerticalAlignment="Center"
+                                                                       Foreground="{StaticResource MeridianTextSubtleBrush}"
+                                                                       Margin="8,0,0,0">
+                                                                <Run Text="{Binding Shares}" />
+                                                                <Run Text=" × $" />
+                                                                <Run Text="{Binding AvgCost}" />
+                                                            </TextBlock>
+                                                        </StackPanel>
 
                                                         <TextBlock Grid.Row="0" Grid.Column="1"
                                                                    FontFamily="{StaticResource IBMPlexMonoFont}"

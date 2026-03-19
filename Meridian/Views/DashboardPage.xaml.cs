@@ -20,6 +20,8 @@ public sealed partial class DashboardPage : Page
     private readonly FinnhubService _finnhub;
     private string? _currentChartTicker;
     private Border? _currentExpandedPanel;
+    private Border? _selectedHoldingBorder;
+    private Border? _selectedHoldingDot;
     private int _animationFrame;
     private bool _isDrawerAnimating;
 
@@ -347,6 +349,10 @@ public sealed partial class DashboardPage : Page
 
         if (_animationFrame % 13 == 0)
             UpdateBrailleActivity();
+
+        // Pulsing green dot on selected holding
+        if (_selectedHoldingDot != null)
+            _selectedHoldingDot.Opacity = 0.4 + 0.6 * (0.5 + 0.5 * Math.Sin(phase));
     }
 
     // ── Ticker Tape ───────────────────────────────────────────────────
@@ -413,7 +419,7 @@ public sealed partial class DashboardPage : Page
     private void UpdateTickerScroll()
     {
         InitTickerTape();
-        TickerTranslate.X -= 0.72;
+        TickerTranslate.X -= 0.95;
 
         // Cache one-segment width (1/10 of total) for seamless wrap
         if (_cachedSegmentWidth <= 0)
@@ -649,18 +655,75 @@ public sealed partial class DashboardPage : Page
 
     private async void OnHoldingTapped(object sender, TappedRoutedEventArgs e)
     {
-        if (sender is FrameworkElement { DataContext: { } dc })
+        if (sender is not Border tappedBorder) return;
+        if (tappedBorder.DataContext is not { } dc) return;
+
+        var ticker = ExtractTicker(dc);
+        if (ticker == null) return;
+
+        var isDeselecting = _currentChartTicker == ticker;
+
+        // Clear previous selection
+        if (_selectedHoldingBorder != null)
         {
-            var ticker = ExtractTicker(dc);
-            if (ticker != null)
-            {
-                var newTicker = _currentChartTicker == ticker ? null : ticker;
-                await LoadChartAsync(newTicker);
-            }
+            _selectedHoldingBorder.BorderBrush = DefaultBorderBrush;
+            _selectedHoldingBorder.Background = TransparentBg;
+        }
+        if (_selectedHoldingDot != null)
+            _selectedHoldingDot.Visibility = Visibility.Collapsed;
+
+        if (isDeselecting)
+        {
+            _selectedHoldingBorder = null;
+            _selectedHoldingDot = null;
+            await LoadChartAsync(null);
+        }
+        else
+        {
+            // Highlight new selection
+            _selectedHoldingBorder = tappedBorder;
+            tappedBorder.BorderBrush = HoverBorderBrush;
+            tappedBorder.Background = HoverBgBrush;
+
+            // Find and show the ActiveDot
+            _selectedHoldingDot = FindActiveDot(tappedBorder);
+            if (_selectedHoldingDot != null)
+                _selectedHoldingDot.Visibility = Visibility.Visible;
+
+            await LoadChartAsync(ticker);
         }
     }
 
-    private async void OnBackButtonClick(object sender, RoutedEventArgs e) => await LoadChartAsync(null);
+    private static Border? FindActiveDot(DependencyObject parent)
+    {
+        var count = VisualTreeHelper.GetChildrenCount(parent);
+        for (int i = 0; i < count; i++)
+        {
+            var child = VisualTreeHelper.GetChild(parent, i);
+            if (child is Border b && b.Tag as string == "ActiveDot")
+                return b;
+            var found = FindActiveDot(child);
+            if (found != null) return found;
+        }
+        return null;
+    }
+
+    private async void OnBackButtonClick(object sender, RoutedEventArgs e)
+    {
+        // Clear holding selection
+        if (_selectedHoldingBorder != null)
+        {
+            _selectedHoldingBorder.BorderBrush = DefaultBorderBrush;
+            _selectedHoldingBorder.Background = TransparentBg;
+            _selectedHoldingBorder = null;
+        }
+        if (_selectedHoldingDot != null)
+        {
+            _selectedHoldingDot.Visibility = Visibility.Collapsed;
+            _selectedHoldingDot = null;
+        }
+        await LoadChartAsync(null);
+    }
 
     // ── Watchlist expand/collapse ─────────────────────────────────────
 
