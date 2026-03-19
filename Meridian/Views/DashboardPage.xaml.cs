@@ -15,6 +15,7 @@ public sealed partial class DashboardPage : Page
     private readonly DispatcherTimer _clockTimer;
     private readonly DispatcherTimer _animationTimer;
     private readonly IMarketDataService _marketData;
+    private readonly FinnhubService _finnhub;
     private string? _currentChartTicker;
     private Border? _currentExpandedPanel;
     private int _animationFrame;
@@ -53,6 +54,13 @@ public sealed partial class DashboardPage : Page
         _marketData = App.Services.GetRequiredService<IMarketDataService>();
         DataContext = new DashboardViewModel(_marketData);
 
+        // Finnhub live ticker data — set FINNHUB_API_KEY env var or replace below
+        var finnhubKey = Environment.GetEnvironmentVariable("FINNHUB_API_KEY") ?? "";
+        _finnhub = new FinnhubService(
+            finnhubKey,
+            ["AAPL", "NVDA", "MSFT", "GOOGL", "META", "TSLA"]);
+        _finnhub.QuotesUpdated += OnLiveQuotesUpdated;
+
         // Live clock — 1s interval
         _clockTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         _clockTimer.Tick += (_, _) => UpdateClock();
@@ -78,6 +86,7 @@ public sealed partial class DashboardPage : Page
         {
             await LoadChartAsync(null);
             await LoadSkiaControlsAsync();
+            _finnhub.Start();
         }
         catch (Exception ex)
         {
@@ -87,9 +96,10 @@ public sealed partial class DashboardPage : Page
 
     private void OnPageUnloaded(object sender, RoutedEventArgs e)
     {
-        // Dispose timers to prevent leaks
         _clockTimer.Stop();
         _animationTimer.Stop();
+        _finnhub.Stop();
+        _finnhub.Dispose();
         _brailleActivityBlocks.Clear();
         _brailleBlocksCached = false;
     }
@@ -283,13 +293,15 @@ public sealed partial class DashboardPage : Page
     // ── Ticker Tape ───────────────────────────────────────────────────
 
     private bool _tickerTapeInitialized;
+    private bool _useLiveData;
 
-    private void InitTickerTape()
+    private void BuildTickerTapeText()
     {
-        if (_tickerTapeInitialized) return;
-        _tickerTapeInitialized = true;
+        // Use live Finnhub data if available, fall back to mock
+        var tickers = _useLiveData
+            ? _finnhub.GetLatestQuotes()
+            : (IReadOnlyList<StreamTicker>)_marketData.GetStreamTickers();
 
-        var tickers = _marketData.GetStreamTickers();
         var sb = new System.Text.StringBuilder();
         for (int repeat = 0; repeat < 2; repeat++)
         {
@@ -299,10 +311,27 @@ public sealed partial class DashboardPage : Page
         TickerTapeText.Text = sb.ToString();
     }
 
+    private void InitTickerTape()
+    {
+        if (_tickerTapeInitialized) return;
+        _tickerTapeInitialized = true;
+        BuildTickerTapeText();
+    }
+
+    private void OnLiveQuotesUpdated()
+    {
+        // Called from Finnhub when new quotes arrive — update ticker tape on UI thread
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            _useLiveData = true;
+            BuildTickerTapeText();
+        });
+    }
+
     private void UpdateTickerScroll()
     {
         InitTickerTape();
-        TickerTranslate.X -= 2.3; // 15% faster than 2px
+        TickerTranslate.X -= 2.3;
         if (TickerTranslate.X < -1400)
             TickerTranslate.X = 0;
     }

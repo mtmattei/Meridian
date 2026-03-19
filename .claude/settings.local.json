@@ -21,7 +21,8 @@
       "mcp__uno-app__uno_app_get_runtime_info",
       "mcp__uno-app__uno_app_visualtree_snapshot",
       "mcp__uno-app__uno_app_close",
-      "mcp__uno-app__uno_app_pointer_click"
+      "mcp__uno-app__uno_app_pointer_click",
+      "WebFetch(domain:finnhub.io)"
     ]
   }
 }
