@@ -41,12 +41,14 @@
                                FontFamily="{StaticResource InstrumentSerifItalicFont}"
                                FontSize="26"
                                Foreground="{StaticResource MeridianTextPrimaryBrush}" />
-                    <TextBlock Text="CAPITAL TERMINAL"
+                    <controls:BrailleRevealControl
+                               Text="CAPITAL TERMINAL"
                                FontFamily="{StaticResource OutfitFont}"
                                FontSize="10" FontWeight="Medium"
                                Foreground="{StaticResource MeridianTextSubtleBrush}"
                                CharacterSpacing="120"
-                               VerticalAlignment="Center" />
+                               VerticalAlignment="Center"
+                               DelayMs="800" StaggerMs="50" />
                 </StackPanel>
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal"
