@@ -338,9 +338,12 @@ public sealed partial class DashboardPage : Page
         if (_animationFrame % 9 == 0)
             UpdateBraillePulse();
 
-        // Gain pill pulse: smooth 3s sine wave
-        var pulseOpacity = 0.85 + 0.15 * Math.Sin((_animationFrame % 188) / 188.0 * Math.PI * 2);
-        GainPill.Opacity = pulseOpacity;
+        // Gain pill pulse: smooth 3s sine wave on opacity + subtle scale
+        var phase = (_animationFrame % 188) / 188.0 * Math.PI * 2;
+        GainPill.Opacity = 0.85 + 0.15 * Math.Sin(phase);
+        var scale = 1.0 + 0.015 * Math.Sin(phase);
+        GainPillScale.ScaleX = scale;
+        GainPillScale.ScaleY = scale;
 
         if (_animationFrame % 13 == 0)
             UpdateBrailleActivity();
@@ -350,6 +353,8 @@ public sealed partial class DashboardPage : Page
 
     private bool _tickerTapeInitialized;
     private bool _useLiveData;
+    private double _cachedSegmentWidth;
+    private double _cachedFooterSegmentWidth;
 
     private void BuildTickerTapeText()
     {
@@ -378,6 +383,10 @@ public sealed partial class DashboardPage : Page
                 TickerTapeText.Inlines.Add(new Run { Text = "  │  " });
             }
         }
+
+        // Reset cached widths on rebuild (new content may differ)
+        _cachedSegmentWidth = 0;
+        _cachedFooterSegmentWidth = 0;
 
         // Also populate footer ticker (plain text, decorative)
         BuildFooterTickerText(tickers);
@@ -415,16 +424,25 @@ public sealed partial class DashboardPage : Page
     {
         InitTickerTape();
         TickerTranslate.X -= 0.63;
-        // Reset when one full segment has scrolled — seamless continuous loop
-        var segmentWidth = TickerTapeText.ActualWidth / 5.0;
-        if (segmentWidth > 0 && TickerTranslate.X < -segmentWidth)
-            TickerTranslate.X += segmentWidth;
+
+        // Cache segment width after first valid measurement for glitch-free reset
+        if (_cachedSegmentWidth <= 0)
+        {
+            var w = TickerTapeText.ActualWidth / 5.0;
+            if (w > 50) _cachedSegmentWidth = w;
+        }
+        if (_cachedSegmentWidth > 0 && TickerTranslate.X < -_cachedSegmentWidth)
+            TickerTranslate.X += _cachedSegmentWidth;
 
         // Footer ticker scroll (slower pace)
         FooterTickerTranslate.X -= 0.29;
-        var footerWidth = FooterTickerText.ActualWidth / 5.0;
-        if (footerWidth > 0 && FooterTickerTranslate.X < -footerWidth)
-            FooterTickerTranslate.X += footerWidth;
+        if (_cachedFooterSegmentWidth <= 0)
+        {
+            var fw = FooterTickerText.ActualWidth / 5.0;
+            if (fw > 50) _cachedFooterSegmentWidth = fw;
+        }
+        if (_cachedFooterSegmentWidth > 0 && FooterTickerTranslate.X < -_cachedFooterSegmentWidth)
+            FooterTickerTranslate.X += _cachedFooterSegmentWidth;
     }
 
     private int _pulseOffset;
