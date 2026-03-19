@@ -361,9 +361,15 @@ public sealed partial class DashboardPage : Page
         TickerTapeTextA.Text = tickerText;
         TickerTapeTextB.Text = tickerText;
 
-        // Force re-measure on next frame
-        _tickerWidth = 0;
-        _tickerPositioned = false;
+        // Re-measure width after layout (deferred), but don't stop scrolling
+        if (_tickerPositioned)
+        {
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                var w = TickerTapeTextA.ActualWidth;
+                if (w > 50) _tickerWidth = w;
+            });
+        }
 
         // Also populate footer ticker
         BuildFooterTickerText(tickers);
