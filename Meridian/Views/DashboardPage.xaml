@@ -457,14 +457,17 @@
                     </Grid.RowDefinitions>
 
                     <!-- Search Bar -->
-                    <TextBox Grid.Row="0" PlaceholderText="⌕  Search ticker or name…"
-                             Text="{Binding SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                             FontFamily="{StaticResource OutfitFont}"
-                             FontSize="12" FontWeight="SemiLight" CornerRadius="12" Padding="12,6"
-                             Background="{StaticResource MeridianCardBrush}"
-                             BorderThickness="1"
-                             BorderBrush="{StaticResource MeridianBorderBrush}"
-                             Height="36" />
+                    <AutoSuggestBox Grid.Row="0"
+                                    PlaceholderText="Search ticker or name…"
+                                    Text="{Binding SearchQuery, Mode=TwoWay}"
+                                    QueryIcon="Find"
+                                    FontFamily="{StaticResource OutfitFont}"
+                                    FontSize="12"
+                                    CornerRadius="12"
+                                    Background="{StaticResource MeridianCardBrush}"
+                                    BorderThickness="1"
+                                    BorderBrush="{StaticResource MeridianBorderBrush}"
+                                    Height="36" />
 
                     <!-- ══ WATCHLIST CARD ══ -->
                     <Border Grid.Row="1" CornerRadius="16" BorderThickness="1"
