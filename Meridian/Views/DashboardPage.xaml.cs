@@ -93,44 +93,64 @@ public sealed partial class DashboardPage : Page
         // Braille spinner: cycle every tick (~70ms ≈ 80ms spec)
         BrailleSpinner.Text = SpinnerGlyphs[_animationFrame % SpinnerGlyphs.Length];
 
-        // Ticker tape scroll: shift every 2nd tick (~140ms)
+        // Ticker tape scroll: continuous pixel scroll
+        UpdateTickerScroll();
+
+        // Braille pulse: shift every 2nd tick (~140ms)
         if (_animationFrame % 2 == 0)
         {
-            UpdateTickerTape();
+            UpdateBraillePulse();
         }
+
+        // Gain pill subtle pulse: 3s cycle (≈43 ticks)
+        var pulsePhase = (_animationFrame % 43) / 43.0;
+        var pulseOpacity = 0.85 + 0.15 * Math.Sin(pulsePhase * Math.PI * 2);
+        GainPill.Opacity = pulseOpacity;
     }
 
-    private int _tickerOffset;
-    private string? _tickerTapeCache;
+    private bool _tickerTapeInitialized;
 
-    private void UpdateTickerTape()
+    private void InitTickerTape()
     {
-        _tickerOffset++;
+        if (_tickerTapeInitialized) return;
+        _tickerTapeInitialized = true;
 
-        // Build once on first call, then just rotate braille glyphs
-        if (_tickerTapeCache == null)
-        {
-            var tickers = _marketData.GetStreamTickers();
-            _tickerTapeCache = string.Join(" │ ",
-                tickers.Select(t => $"____ {t.Ticker} {t.Price} {t.Delta}"));
-        }
-
-        // Replace ____ placeholders with rotating braille glyphs
-        var ticks = _marketData.GetStreamTickers();
+        // Build a doubled string for seamless looping
+        var tickers = _marketData.GetStreamTickers();
         var sb = new System.Text.StringBuilder();
-        for (int ti = 0; ti < ticks.Count; ti++)
+        // Build segment twice for seamless loop
+        for (int repeat = 0; repeat < 2; repeat++)
         {
-            var t = ticks[ti];
-            for (int i = 0; i < 4; i++)
+            foreach (var t in tickers)
             {
-                var idx = (_tickerOffset + i + ti * 3) % BrailleWaveChars.Length;
-                sb.Append(BrailleWaveChars[idx]);
+                sb.Append("⣤⣴⣶⣷ ");
+                sb.Append($"{t.Ticker} {t.Price} {t.Delta}  │  ");
             }
-            sb.Append($" {t.Ticker} {t.Price} {t.Delta}");
-            if (ti < ticks.Count - 1) sb.Append(" │ ");
         }
-
         TickerTapeText.Text = sb.ToString();
+    }
+
+    private void UpdateTickerScroll()
+    {
+        InitTickerTape();
+
+        // Scroll 2px per tick (70ms → ~28px/sec)
+        TickerTranslate.X -= 2;
+
+        // Reset when half the text has scrolled out (seamless loop)
+        if (TickerTranslate.X < -1400)
+            TickerTranslate.X = 0;
+    }
+
+    // Braille pulse for Market Pulse header
+    private static readonly string BraillePulsePattern = "⠀⣀⣤⣴⣶⣷⣿⣷⣶⣴⣤⣀⠀⠀⠀⠀⠀⠀";
+    private int _pulseOffset;
+
+    private void UpdateBraillePulse()
+    {
+        _pulseOffset = (_pulseOffset + 1) % BraillePulsePattern.Length;
+        var shifted = BraillePulsePattern[_pulseOffset..] + BraillePulsePattern[.._pulseOffset];
+        BraillePulse.Text = shifted;
     }
 
     private async Task LoadChartAsync(string? ticker)
@@ -159,18 +179,27 @@ public sealed partial class DashboardPage : Page
             }
         };
 
+        // Format X axis: show ~5 evenly spaced date labels
+        var step = Math.Max(1, dates.Length / 5);
+        var xLabels = new string[dates.Length];
+        for (int i = 0; i < dates.Length; i++)
+        {
+            if (i % step == 0 && DateTime.TryParse(dates[i], out var dt))
+                xLabels[i] = dt.ToString("MMM d");
+            else
+                xLabels[i] = "";
+        }
+
         PerformanceChart.XAxes = new Axis[]
         {
             new Axis
             {
-                Labels = dates,
+                Labels = xLabels,
                 LabelsRotation = 0,
                 TextSize = 10,
                 LabelsPaint = new SolidColorPaint(SKColor.Parse("#C4C0B8")),
                 SeparatorsPaint = null,
                 ShowSeparatorLines = false,
-                ForceStepToMin = true,
-                MinStep = Math.Max(1, dates.Length / 5),
             }
         };
 
@@ -180,7 +209,8 @@ public sealed partial class DashboardPage : Page
             {
                 TextSize = 10,
                 LabelsPaint = new SolidColorPaint(SKColor.Parse("#C4C0B8")),
-                SeparatorsPaint = new SolidColorPaint(SKColor.Parse("#E8E4DE"), 1),
+                SeparatorsPaint = null,
+                ShowSeparatorLines = false,
                 Labeler = val => string.IsNullOrEmpty(ticker)
                     ? $"${val / 1000:N0}k"
                     : $"${val:N0}",
@@ -341,7 +371,8 @@ public sealed partial class DashboardPage : Page
         if (sender is Border b)
         {
             b.BorderBrush = HoverBorderBrush;
-            b.Translation = new System.Numerics.Vector3(0, -2, 0);
+            // Use RenderTransform instead of Translation to avoid layout jitter
+            b.RenderTransform = new Microsoft.UI.Xaml.Media.TranslateTransform { Y = -2 };
         }
     }
 
@@ -350,7 +381,7 @@ public sealed partial class DashboardPage : Page
         if (sender is Border b)
         {
             b.BorderBrush = DefaultBorderBrush;
-            b.Translation = new System.Numerics.Vector3(0, 0, 0);
+            b.RenderTransform = null;
         }
     }
 
