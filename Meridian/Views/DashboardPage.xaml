@@ -7,6 +7,7 @@
       xmlns:controls="using:Meridian.Controls"
       xmlns:views="using:Meridian.Views"
       xmlns:converters="using:Meridian.Presentation"
+      xmlns:models="using:Meridian.Models"
       Background="{ThemeResource MeridianBackgroundBrush}">
 
     <Page.Resources>
@@ -177,23 +178,23 @@
                         <StackLayout Orientation="Horizontal" Spacing="6" />
                     </ItemsRepeater.Layout>
                     <ItemsRepeater.ItemTemplate>
-                        <DataTemplate>
+                        <DataTemplate x:DataType="models:IndexTicker">
                             <Border CornerRadius="12" BorderThickness="1"
                                     BorderBrush="{ThemeResource MeridianBorderBrush}"
                                     Background="{ThemeResource MeridianCardBrush}"
                                     Padding="12,8" Width="116">
                                 <StackPanel Spacing="2">
-                                    <TextBlock Text="{Binding Name}"
+                                    <TextBlock Text="{x:Bind Name}"
                                                FontSize="10" FontWeight="SemiBold"
                                                Foreground="{ThemeResource MeridianTextSubtleBrush}"
                                                CharacterSpacing="60" />
-                                    <TextBlock Text="{Binding Value}"
+                                    <TextBlock Text="{x:Bind Value}"
                                                FontFamily="{StaticResource IBMPlexMonoMediumFont}"
                                                FontSize="14" />
-                                    <TextBlock Text="{Binding Change}"
+                                    <TextBlock Text="{x:Bind Change}"
                                                FontFamily="{StaticResource IBMPlexMonoMediumFont}"
                                                FontSize="11"
-                                               Foreground="{Binding IsUp, Converter={StaticResource GainLossBrush}}" />
+                                               Foreground="{x:Bind IsUp, Converter={StaticResource GainLossBrush}}" />
                                 </StackPanel>
                             </Border>
                         </DataTemplate>
@@ -333,14 +334,14 @@
                                         <StackLayout Spacing="6" />
                                     </ItemsRepeater.Layout>
                                     <ItemsRepeater.ItemTemplate>
-                                        <DataTemplate>
+                                        <DataTemplate x:DataType="models:Holding">
                                             <Border CornerRadius="12" BorderThickness="1"
                                                     BorderBrush="{ThemeResource MeridianBorderBrush}"
                                                     Padding="12,14"
                                                     Tapped="OnHoldingTapped"
                                                     PointerEntered="OnCardPointerEntered"
                                                     PointerExited="OnCardPointerExited"
-                                                    AutomationProperties.Name="{Binding Ticker}">
+                                                    AutomationProperties.Name="{x:Bind Ticker}">
                                                 <StackPanel Spacing="6">
                                                     <Grid>
                                                         <Grid.ColumnDefinitions>
@@ -363,7 +364,7 @@
                                                                     VerticalAlignment="Center" Margin="0,0,6,0" />
                                                             <TextBlock FontFamily="{StaticResource OutfitFont}"
                                                                        FontSize="14" FontWeight="Bold"
-                                                                       Text="{Binding Ticker}" />
+                                                                       Text="{x:Bind Ticker}" />
                                                             <TextBlock FontFamily="{StaticResource OutfitFont}"
                                                                        FontSize="10" VerticalAlignment="Center"
                                                                        Foreground="{ThemeResource MeridianTextSubtleBrush}"
@@ -377,15 +378,15 @@
                                                         <TextBlock Grid.Row="0" Grid.Column="1"
                                                                    FontFamily="{StaticResource IBMPlexMonoFont}"
                                                                    FontSize="13" HorizontalAlignment="Right"
-                                                                   Text="{Binding MarketValue, Converter={StaticResource DecimalFormat}, ConverterParameter='$#,##0.00'}" />
+                                                                   Text="{x:Bind MarketValue, Converter={StaticResource DecimalFormat}, ConverterParameter='$#,##0.00'}" />
 
                                                         <!-- Row 1: Gain % -->
                                                         <TextBlock Grid.Row="1" Grid.Column="1"
                                                                    FontFamily="{StaticResource IBMPlexMonoFont}"
                                                                    FontSize="11" HorizontalAlignment="Right"
-                                                                   Foreground="{Binding IsPositive, Converter={StaticResource GainLossBrush}}"
+                                                                   Foreground="{x:Bind IsPositive, Converter={StaticResource GainLossBrush}}"
                                                                    Margin="0,2,0,0"
-                                                                   Text="{Binding GainPct, Converter={StaticResource DecimalFormat}, ConverterParameter='+0.00;-0.00;0.00'}" />
+                                                                   Text="{x:Bind GainPct, Converter={StaticResource DecimalFormat}, ConverterParameter='+0.00;-0.00;0.00'}" />
                                                     </Grid>
 
                                                     <!-- Weight bar: 3px height, green, width proportional to portfolio weight -->
@@ -483,7 +484,7 @@
                                     <StackLayout Spacing="0" />
                                 </ItemsRepeater.Layout>
                                 <ItemsRepeater.ItemTemplate>
-                                    <DataTemplate>
+                                    <DataTemplate x:DataType="models:Stock">
                                         <StackPanel>
                                             <!-- Collapsed row -->
                                             <Border Padding="14,12,22,12"
@@ -502,18 +503,18 @@
                                                     <!-- Left: Ticker + braille + chevron -->
                                                     <StackPanel Grid.Column="0" Margin="8,0,0,0">
                                                         <StackPanel Orientation="Horizontal" Spacing="6">
-                                                            <TextBlock Text="{Binding Ticker}"
+                                                            <TextBlock Text="{x:Bind Ticker}"
                                                                        FontSize="14" FontWeight="Bold"
                                                                        FontFamily="{StaticResource OutfitFont}" />
                                                             <TextBlock Tag="BrailleActivity" Text="⣤⣶⣷⣿⣶⣤" FontSize="9"
-                                                                       Foreground="{Binding Pct, Converter={StaticResource GainLossBrush}}"
+                                                                       Foreground="{x:Bind Pct, Converter={StaticResource GainLossBrush}}"
                                                                        Opacity="0.5"
                                                                        VerticalAlignment="Center" />
                                                             <TextBlock Text="▾" FontSize="8"
                                                                        Foreground="{ThemeResource MeridianTextSubtleBrush}"
                                                                        VerticalAlignment="Center" />
                                                         </StackPanel>
-                                                        <TextBlock Text="{Binding Name}" FontSize="11"
+                                                        <TextBlock Text="{x:Bind Name}" FontSize="11"
                                                                    Foreground="{ThemeResource MeridianTextSubtleBrush}"
                                                                    TextTrimming="CharacterEllipsis"
                                                                    Margin="0,1,0,0" />
@@ -522,18 +523,18 @@
                                                     <!-- Center: Sparkline mini chart -->
                                                     <controls:SparklineControl Grid.Column="1"
                                                         HorizontalAlignment="Center" VerticalAlignment="Center"
-                                                        IsPositive="{Binding Pct, Converter={StaticResource IsPositive}}" />
+                                                        IsPositive="{x:Bind Pct, Converter={StaticResource IsPositive}}" />
 
                                                     <!-- Right: Price + Delta -->
                                                     <StackPanel Grid.Column="2" HorizontalAlignment="Right"
                                                                 VerticalAlignment="Center">
                                                         <TextBlock FontFamily="{StaticResource IBMPlexMonoFont}"
                                                                    FontSize="13" HorizontalAlignment="Right"
-                                                                   Text="{Binding Price, Converter={StaticResource PrefixSuffix}, ConverterParameter='$|'}" />
+                                                                   Text="{x:Bind Price, Converter={StaticResource PrefixSuffix}, ConverterParameter='$|'}" />
                                                         <TextBlock FontFamily="{StaticResource IBMPlexMonoFont}"
                                                                    FontSize="11" HorizontalAlignment="Right"
-                                                                   Foreground="{Binding Pct, Converter={StaticResource GainLossBrush}}"
-                                                                   Text="{Binding Pct, Converter={StaticResource PrefixSuffix}, ConverterParameter='|%'}" />
+                                                                   Foreground="{x:Bind Pct, Converter={StaticResource GainLossBrush}}"
+                                                                   Text="{x:Bind Pct, Converter={StaticResource PrefixSuffix}, ConverterParameter='|%'}" />
                                                     </StackPanel>
                                                 </Grid>
                                             </Border>
@@ -565,16 +566,16 @@
                                                                    FontSize="9" Foreground="{ThemeResource MeridianTextSubtleBrush}" />
                                                         <TextBlock Grid.Row="1" Grid.Column="0"
                                                                    FontFamily="{StaticResource IBMPlexMonoFont}" FontSize="13"
-                                                                   Text="{Binding Open, Converter={StaticResource DecimalFormat}, ConverterParameter='$#,##0.00'}" />
+                                                                   Text="{x:Bind Open, Converter={StaticResource DecimalFormat}, ConverterParameter='$#,##0.00'}" />
                                                         <TextBlock Grid.Row="1" Grid.Column="1"
                                                                    FontFamily="{StaticResource IBMPlexMonoFont}" FontSize="13"
-                                                                   Text="{Binding High, Converter={StaticResource DecimalFormat}, ConverterParameter='$#,##0.00'}" />
+                                                                   Text="{x:Bind High, Converter={StaticResource DecimalFormat}, ConverterParameter='$#,##0.00'}" />
                                                         <TextBlock Grid.Row="1" Grid.Column="2"
                                                                    FontFamily="{StaticResource IBMPlexMonoFont}" FontSize="13"
-                                                                   Text="{Binding Low, Converter={StaticResource DecimalFormat}, ConverterParameter='$#,##0.00'}" />
+                                                                   Text="{x:Bind Low, Converter={StaticResource DecimalFormat}, ConverterParameter='$#,##0.00'}" />
                                                         <TextBlock Grid.Row="1" Grid.Column="3"
                                                                    FontFamily="{StaticResource IBMPlexMonoFont}" FontSize="13"
-                                                                   Text="{Binding Volume}" />
+                                                                   Text="{x:Bind Volume}" />
                                                     </Grid>
 
                                                     <!-- Day Range Bar -->
@@ -585,13 +586,13 @@
                                                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="0">
                                                                 <TextBlock FontSize="9" FontFamily="{StaticResource IBMPlexMonoFont}"
                                                                            Foreground="{ThemeResource MeridianTextSubtleBrush}"
-                                                                           Text="{Binding Low, Converter={StaticResource PrefixSuffix}, ConverterParameter='$|'}" />
+                                                                           Text="{x:Bind Low, Converter={StaticResource PrefixSuffix}, ConverterParameter='$|'}" />
                                                                 <TextBlock FontSize="9" FontFamily="{StaticResource IBMPlexMonoFont}"
                                                                            Foreground="{ThemeResource MeridianTextSubtleBrush}"
                                                                            Text=" — " />
                                                                 <TextBlock FontSize="9" FontFamily="{StaticResource IBMPlexMonoFont}"
                                                                            Foreground="{ThemeResource MeridianTextSubtleBrush}"
-                                                                           Text="{Binding High, Converter={StaticResource PrefixSuffix}, ConverterParameter='$|'}" />
+                                                                           Text="{x:Bind High, Converter={StaticResource PrefixSuffix}, ConverterParameter='$|'}" />
                                                             </StackPanel>
                                                         </Grid>
                                                         <Grid Height="6">
@@ -669,7 +670,7 @@
                                     <StackLayout Spacing="14" />
                                 </ItemsRepeater.Layout>
                                 <ItemsRepeater.ItemTemplate>
-                                    <DataTemplate>
+                                    <DataTemplate x:DataType="models:NewsItem">
                                         <Grid PointerEntered="OnNewsItemPointerEntered"
                                               PointerExited="OnNewsItemPointerExited">
                                             <Grid.ColumnDefinitions>
@@ -681,15 +682,15 @@
                                             <Border Grid.Column="0" CornerRadius="6"
                                                     Padding="8,3" Margin="0,0,12,0"
                                                     VerticalAlignment="Top"
-                                                    Background="{Binding Tag, Converter={StaticResource TagToBrush}}">
-                                                <TextBlock Text="{Binding Tag}"
+                                                    Background="{x:Bind Tag, Converter={StaticResource TagToBrush}}">
+                                                <TextBlock Text="{x:Bind Tag}"
                                                            FontSize="9" FontWeight="SemiBold"
                                                            CharacterSpacing="40" />
                                             </Border>
 
                                             <!-- Headline + timestamp -->
                                             <StackPanel Grid.Column="1" Spacing="3">
-                                                <TextBlock Text="{Binding Text}"
+                                                <TextBlock Text="{x:Bind Text}"
                                                            FontSize="12" TextWrapping="Wrap"
                                                            LineHeight="17" />
                                                 <TextBlock FontFamily="{StaticResource IBMPlexMonoFont}"
