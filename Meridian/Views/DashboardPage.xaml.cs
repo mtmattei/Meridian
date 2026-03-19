@@ -368,17 +368,19 @@ public sealed partial class DashboardPage : Page
             ? _finnhub.GetLatestQuotes()
             : (IReadOnlyList<StreamTicker>)_marketData.GetStreamTickers();
 
-        // Plain text for glitch-free scrolling — 10x repeat for long buffer
+        // Plain text — 50x repeat for ~15min scroll without any reset/loop
         var segment = new System.Text.StringBuilder();
         foreach (var t in tickers)
             segment.Append($"⣤⣴⣶⣷ {t.Ticker}  {t.Price}  {t.Delta}   │   ");
 
         var oneSegment = segment.ToString();
-        var sb = new System.Text.StringBuilder(oneSegment.Length * 10);
-        for (int i = 0; i < 10; i++)
+        var sb = new System.Text.StringBuilder(oneSegment.Length * 50);
+        for (int i = 0; i < 50; i++)
             sb.Append(oneSegment);
 
         TickerTapeText.Text = sb.ToString();
+        // Reset scroll position on content rebuild (live data change is natural content swap)
+        TickerTranslate.X = 0;
 
         // Reset cached widths on rebuild (new content may differ)
         _cachedSegmentWidth = 0;
@@ -419,27 +421,12 @@ public sealed partial class DashboardPage : Page
     private void UpdateTickerScroll()
     {
         InitTickerTape();
+        // Continuous scroll — no reset, no loop. 50x buffer lasts ~15 minutes.
+        // Live data updates rebuild the text and reset position naturally.
         TickerTranslate.X -= 0.95;
 
-        // Cache one-segment width (1/10 of total) for seamless wrap
-        if (_cachedSegmentWidth <= 0)
-        {
-            var w = TickerTapeText.ActualWidth / 10.0;
-            if (w > 50) _cachedSegmentWidth = w;
-        }
-        // Reset by one segment — content is identical, visually seamless
-        if (_cachedSegmentWidth > 0 && TickerTranslate.X < -_cachedSegmentWidth)
-            TickerTranslate.X += _cachedSegmentWidth;
-
-        // Footer ticker scroll (slower pace)
+        // Footer ticker scroll (slower pace, same no-reset approach)
         FooterTickerTranslate.X -= 0.29;
-        if (_cachedFooterSegmentWidth <= 0)
-        {
-            var fw = FooterTickerText.ActualWidth / 5.0;
-            if (fw > 50) _cachedFooterSegmentWidth = fw;
-        }
-        if (_cachedFooterSegmentWidth > 0 && FooterTickerTranslate.X < -_cachedFooterSegmentWidth)
-            FooterTickerTranslate.X += _cachedFooterSegmentWidth;
     }
 
     private int _pulseOffset;
