@@ -55,7 +55,7 @@ public sealed partial class DashboardPage : Page
         DataContext = new DashboardViewModel(_marketData);
 
         // Finnhub live ticker data — set FINNHUB_API_KEY env var or replace below
-        var finnhubKey = Environment.GetEnvironmentVariable("FINNHUB_API_KEY") ?? "";
+        var finnhubKey = Environment.GetEnvironmentVariable("FINNHUB_API_KEY") ?? "d6u0709r01qjm9brvoigd6u0709r01qjm9brvoj0";
         _finnhub = new FinnhubService(
             finnhubKey,
             ["AAPL", "NVDA", "MSFT", "GOOGL", "META", "TSLA"]);

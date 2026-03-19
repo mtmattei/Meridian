@@ -13,6 +13,7 @@
         <converters:GainLossBrushConverter x:Key="GainLossBrush" />
         <converters:DecimalFormatConverter x:Key="DecimalFormat" />
         <converters:IsPositiveConverter x:Key="IsPositive" />
+        <converters:PrefixSuffixConverter x:Key="PrefixSuffix" />
     </Page.Resources>
 
     <Grid>
@@ -459,16 +460,12 @@
                                                     <StackPanel Grid.Column="2" HorizontalAlignment="Right"
                                                                 VerticalAlignment="Center">
                                                         <TextBlock FontFamily="{StaticResource IBMPlexMonoFont}"
-                                                                   FontSize="13" HorizontalAlignment="Right">
-                                                            <Run Text="$" />
-                                                            <Run Text="{Binding Price}" />
-                                                        </TextBlock>
+                                                                   FontSize="13" HorizontalAlignment="Right"
+                                                                   Text="{Binding Price, Converter={StaticResource PrefixSuffix}, ConverterParameter='$|'}" />
                                                         <TextBlock FontFamily="{StaticResource IBMPlexMonoFont}"
                                                                    FontSize="11" HorizontalAlignment="Right"
-                                                                   Foreground="{Binding Pct, Converter={StaticResource GainLossBrush}}">
-                                                            <Run Text="{Binding Pct}" />
-                                                            <Run Text="%" />
-                                                        </TextBlock>
+                                                                   Foreground="{Binding Pct, Converter={StaticResource GainLossBrush}}"
+                                                                   Text="{Binding Pct, Converter={StaticResource PrefixSuffix}, ConverterParameter='|%'}" />
                                                     </StackPanel>
                                                 </Grid>
                                             </Border>
@@ -517,14 +514,17 @@
                                                         <Grid>
                                                             <TextBlock Text="Day Range" FontSize="9"
                                                                        Foreground="{StaticResource MeridianTextSubtleBrush}" />
-                                                            <TextBlock HorizontalAlignment="Right" FontSize="9"
-                                                                       FontFamily="{StaticResource IBMPlexMonoFont}"
-                                                                       Foreground="{StaticResource MeridianTextSubtleBrush}">
-                                                                <Run Text="$" />
-                                                                <Run Text="{Binding Low}" />
-                                                                <Run Text=" — $" />
-                                                                <Run Text="{Binding High}" />
-                                                            </TextBlock>
+                                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="0">
+                                                                <TextBlock FontSize="9" FontFamily="{StaticResource IBMPlexMonoFont}"
+                                                                           Foreground="{StaticResource MeridianTextSubtleBrush}"
+                                                                           Text="{Binding Low, Converter={StaticResource PrefixSuffix}, ConverterParameter='$|'}" />
+                                                                <TextBlock FontSize="9" FontFamily="{StaticResource IBMPlexMonoFont}"
+                                                                           Foreground="{StaticResource MeridianTextSubtleBrush}"
+                                                                           Text=" — " />
+                                                                <TextBlock FontSize="9" FontFamily="{StaticResource IBMPlexMonoFont}"
+                                                                           Foreground="{StaticResource MeridianTextSubtleBrush}"
+                                                                           Text="{Binding High, Converter={StaticResource PrefixSuffix}, ConverterParameter='$|'}" />
+                                                            </StackPanel>
                                                         </Grid>
                                                         <Border Height="4" CornerRadius="2"
                                                                 Background="{StaticResource MeridianBorderBrush}" />
