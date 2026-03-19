@@ -102,6 +102,10 @@ public sealed class BrailleRevealControl : Microsoft.UI.Xaml.Controls.Control
 
             case Phase.Resolved:
                 RenderFlicker();
+                // Loop: restart full cycle after ~30s of ambient flicker
+                // At 50ms/tick, 30s = 600 ticks
+                if (_frame >= 600)
+                    StartAnimation();
                 break;
         }
     }
