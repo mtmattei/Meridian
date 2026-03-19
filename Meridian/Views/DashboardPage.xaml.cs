@@ -321,6 +321,7 @@ public sealed partial class DashboardPage : Page
             ChartLabel.Text = "PERFORMANCE";
             StockDetailPanel.Visibility = Visibility.Collapsed;
             BackButton.Visibility = Visibility.Collapsed;
+            PerformanceChart.Height = 240; // Restore full height for portfolio mode
             return;
         }
 
@@ -339,6 +340,9 @@ public sealed partial class DashboardPage : Page
 
             StockDetailPanel.Visibility = Visibility.Visible;
             BackButton.Visibility = Visibility.Visible;
+
+            // Reduce chart height for stock detail mode (210px vs 240px)
+            PerformanceChart.Height = 210;
         }
         catch (Exception ex)
         {
@@ -470,6 +474,19 @@ public sealed partial class DashboardPage : Page
     private void OnRowPointerExited(object sender, PointerRoutedEventArgs e)
     {
         if (sender is Border b) b.Background = TransparentBg;
+    }
+
+    // News item hover slide (translateX 4px per spec)
+    private void OnNewsItemPointerEntered(object sender, PointerRoutedEventArgs e)
+    {
+        if (sender is FrameworkElement fe)
+            fe.RenderTransform = new TranslateTransform { X = 4 };
+    }
+
+    private void OnNewsItemPointerExited(object sender, PointerRoutedEventArgs e)
+    {
+        if (sender is FrameworkElement fe)
+            fe.RenderTransform = null;
     }
 
     private void UpdateClock()

@@ -145,6 +145,11 @@ public sealed partial class TradeDrawer : UserControl
         StopButton.Foreground = type == "stop" ? AccentBrush : inactiveForeground;
 
         LimitPricePanel.Visibility = type != "market" ? Visibility.Visible : Visibility.Collapsed;
+
+        // Reset limit price when switching to Market (per interaction spec edge case)
+        if (type == "market")
+            LimitPriceInput.Text = "";
+
         UpdatePreview();
     }
 

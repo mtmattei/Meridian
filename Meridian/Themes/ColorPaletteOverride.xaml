@@ -75,11 +75,12 @@
   <Color x:Key="MeridianGain">#2D6A4F</Color>
   <Color x:Key="MeridianLoss">#B5342B</Color>
   <Color x:Key="MeridianAccent">#C9A96E</Color>
-  <Color x:Key="MeridianCardHover">#FAF8F5</Color>
+  <Color x:Key="MeridianCardHover">#FDFCFA</Color>
+  <Color x:Key="MeridianSelectedHoldingBg">#0A2D6A4F</Color>
   <Color x:Key="MeridianExpandedBg">#F8F6F2</Color>
-  <Color x:Key="MeridianGainBgTint">#0D2D6A4F</Color>
-  <Color x:Key="MeridianLossBgTint">#0DB5342B</Color>
-  <Color x:Key="MeridianAccentBgTint">#0DC9A96E</Color>
+  <Color x:Key="MeridianGainBgTint">#142D6A4F</Color>
+  <Color x:Key="MeridianLossBgTint">#14B5342B</Color>
+  <Color x:Key="MeridianAccentBgTint">#14C9A96E</Color>
   <Color x:Key="MeridianBackdrop">#40000000</Color>
   <Color x:Key="MeridianRowSeparator">#0A000000</Color>
   <Color x:Key="MeridianBackgroundTransparent">#00F6F4F0</Color>
@@ -96,6 +97,7 @@
   <SolidColorBrush x:Key="MeridianLossBrush" Color="{StaticResource MeridianLoss}" />
   <SolidColorBrush x:Key="MeridianAccentBrush" Color="{StaticResource MeridianAccent}" />
   <SolidColorBrush x:Key="MeridianCardHoverBrush" Color="{StaticResource MeridianCardHover}" />
+  <SolidColorBrush x:Key="MeridianSelectedHoldingBgBrush" Color="{StaticResource MeridianSelectedHoldingBg}" />
   <SolidColorBrush x:Key="MeridianExpandedBgBrush" Color="{StaticResource MeridianExpandedBg}" />
   <SolidColorBrush x:Key="MeridianGainBgTintBrush" Color="{StaticResource MeridianGainBgTint}" />
   <SolidColorBrush x:Key="MeridianLossBgTintBrush" Color="{StaticResource MeridianLossBgTint}" />
