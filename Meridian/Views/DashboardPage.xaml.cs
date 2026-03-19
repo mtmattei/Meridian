@@ -5,8 +5,6 @@ using Meridian.Services;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
-using Microsoft.UI.Text;
-using Microsoft.UI.Xaml.Documents;
 
 namespace Meridian.Views;
 
@@ -313,29 +311,32 @@ public sealed partial class DashboardPage : Page
     {
         _animationFrame = (_animationFrame + 1) % 100_000;
 
-        // Smooth ticker scroll every frame
+        // Smooth ticker scroll every frame (must be 60fps)
         UpdateTickerScroll();
 
-        // Slower decorative animations (sub-divided from 60fps tick)
+        // Pulse animations every 2nd frame (30fps is smooth enough for breathing)
+        if (_animationFrame % 2 == 0)
+        {
+            var phase = (_animationFrame % 188) / 188.0 * Math.PI * 2;
+            var sinVal = Math.Sin(phase);
+            GainPill.Opacity = 0.72 + 0.28 * sinVal;
+            var scale = 1.0 + 0.02 * sinVal;
+            GainPillScale.ScaleX = scale;
+            GainPillScale.ScaleY = scale;
+
+            if (_selectedHoldingDot != null)
+                _selectedHoldingDot.Opacity = 0.4 + 0.6 * (0.5 + 0.5 * sinVal);
+        }
+
+        // Slower decorative animations
         if (_animationFrame % 5 == 0)
             BrailleSpinner.Text = SpinnerGlyphs[(_animationFrame / 5) % SpinnerGlyphs.Length];
 
         if (_animationFrame % 9 == 0)
             UpdateBraillePulse();
 
-        // Gain pill pulse: obvious breathing animation (opacity 0.45→1.0 + scale)
-        var phase = (_animationFrame % 188) / 188.0 * Math.PI * 2;
-        GainPill.Opacity = 0.72 + 0.28 * Math.Sin(phase);
-        var scale = 1.0 + 0.02 * Math.Sin(phase);
-        GainPillScale.ScaleX = scale;
-        GainPillScale.ScaleY = scale;
-
         if (_animationFrame % 13 == 0)
             UpdateBrailleActivity();
-
-        // Pulsing green dot on selected holding
-        if (_selectedHoldingDot != null)
-            _selectedHoldingDot.Opacity = 0.4 + 0.6 * (0.5 + 0.5 * Math.Sin(phase));
     }
 
     // ── Ticker Tape ───────────────────────────────────────────────────
@@ -344,7 +345,6 @@ public sealed partial class DashboardPage : Page
     private bool _useLiveData;
     private double _tickerWidth;
     private bool _tickerPositioned;
-    private double _cachedFooterSegmentWidth;
 
     private void BuildTickerTapeText()
     {
@@ -364,7 +364,6 @@ public sealed partial class DashboardPage : Page
         // Force re-measure on next frame
         _tickerWidth = 0;
         _tickerPositioned = false;
-        _cachedFooterSegmentWidth = 0;
 
         // Also populate footer ticker
         BuildFooterTickerText(tickers);
@@ -442,6 +441,7 @@ public sealed partial class DashboardPage : Page
     // ── Braille Activity (cached references) ──────────────────────────
 
     private int _brailleActivityFrame;
+    private readonly System.Text.StringBuilder _brailleActivitySb = new(6);
 
     private void CacheBrailleBlocks()
     {
@@ -467,17 +467,19 @@ public sealed partial class DashboardPage : Page
     private void UpdateBrailleActivity()
     {
         CacheBrailleBlocks();
+        if (_brailleActivityBlocks.Count == 0) return;
+
         _brailleActivityFrame = (_brailleActivityFrame + 1) % 100;
 
-        var sb = new System.Text.StringBuilder(6);
+        _brailleActivitySb.Clear();
         for (int i = 0; i < 6; i++)
         {
             var phase = (_brailleActivityFrame + i * 2) % (BrailleActivityGlyphs.Length * 2);
             if (phase >= BrailleActivityGlyphs.Length)
                 phase = BrailleActivityGlyphs.Length * 2 - 1 - phase;
-            sb.Append(BrailleActivityGlyphs[Math.Clamp(phase, 0, BrailleActivityGlyphs.Length - 1)]);
+            _brailleActivitySb.Append(BrailleActivityGlyphs[Math.Clamp(phase, 0, BrailleActivityGlyphs.Length - 1)]);
         }
-        var text = sb.ToString();
+        var text = _brailleActivitySb.ToString();
 
         foreach (var tb in _brailleActivityBlocks)
             tb.Text = text;
