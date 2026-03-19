@@ -255,7 +255,9 @@ public sealed class VolumeChartControl : SKXamlCanvas
             var tipW = 90f;
             var tipH = 22f;
             var tipX = Math.Clamp(hx - tipW / 2, 0, w - tipW);
-            var tipY = padding.Top - tipH - 4;
+            // Position tooltip inside chart area (not above, which gets clipped)
+            var barTopY = _hoveredBar < envelopePoints.Count ? envelopePoints[_hoveredBar].Y : padding.Top + 20;
+            var tipY = Math.Max(padding.Top + 4, barTopY - tipH - 8);
 
             canvas.DrawRoundRect(tipX, tipY, tipW, tipH, 6, 6, _tipBgPaint);
             canvas.DrawText(label, tipX + tipW / 2, tipY + 15, SKTextAlign.Center, _tipFont, _tipTextPaint);

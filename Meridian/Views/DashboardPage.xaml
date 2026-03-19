@@ -130,9 +130,9 @@
                                LineHeight="68" Margin="0,-4,0,0"
                                AutomationProperties.Name="Portfolio value: $163,842.56" />
                     <StackPanel Orientation="Horizontal" Spacing="14" Margin="0,2,0,0">
-                        <Border x:Name="GainPill" CornerRadius="100"
+                        <Border x:Name="GainPill" CornerRadius="18"
                                 Background="{StaticResource MeridianGainBgTintBrush}"
-                                Padding="14,6">
+                                Padding="14,8">
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <Viewbox Width="10" Height="10" VerticalAlignment="Center">
                                     <Polygon Points="5,0 10,8 0,8"
@@ -156,7 +156,7 @@
                 </StackPanel>
 
                 <!-- Index Cards (3 cards = 360px to match sidebar width) -->
-                <ItemsRepeater Grid.Column="1" VerticalAlignment="Center"
+                <ItemsRepeater Grid.Column="1" VerticalAlignment="Bottom"
                                HorizontalAlignment="Right" Width="360"
                                ItemsSource="{Binding IndexTickers}">
                     <ItemsRepeater.Layout>
@@ -460,12 +460,14 @@
                                                                 VerticalAlignment="Center">
                                                         <TextBlock FontFamily="{StaticResource IBMPlexMonoFont}"
                                                                    FontSize="13" HorizontalAlignment="Right">
-                                                            <Run Text="$" /><Run Text="{Binding Price}" />
+                                                            <Run Text="$" />
+                                                            <Run Text="{Binding Price}" />
                                                         </TextBlock>
                                                         <TextBlock FontFamily="{StaticResource IBMPlexMonoFont}"
                                                                    FontSize="11" HorizontalAlignment="Right"
                                                                    Foreground="{Binding Pct, Converter={StaticResource GainLossBrush}}">
-                                                            <Run Text="{Binding Pct}" /><Run Text="%" />
+                                                            <Run Text="{Binding Pct}" />
+                                                            <Run Text="%" />
                                                         </TextBlock>
                                                     </StackPanel>
                                                 </Grid>
@@ -518,7 +520,10 @@
                                                             <TextBlock HorizontalAlignment="Right" FontSize="9"
                                                                        FontFamily="{StaticResource IBMPlexMonoFont}"
                                                                        Foreground="{StaticResource MeridianTextSubtleBrush}">
-                                                                <Run Text="$" /><Run Text="{Binding Low}" /><Run Text=" — $" /><Run Text="{Binding High}" />
+                                                                <Run Text="$" />
+                                                                <Run Text="{Binding Low}" />
+                                                                <Run Text=" — $" />
+                                                                <Run Text="{Binding High}" />
                                                             </TextBlock>
                                                         </Grid>
                                                         <Border Height="4" CornerRadius="2"
@@ -530,6 +535,7 @@
                                                         <Button Content="View Chart" FontSize="11" Padding="14,6"
                                                                 CornerRadius="8" BorderThickness="1"
                                                                 BorderBrush="{StaticResource MeridianBorderBrush}"
+                                                                Foreground="{StaticResource MeridianTextPrimaryBrush}"
                                                                 Background="Transparent"
                                                                 Tapped="OnViewChartFromWatchlist" />
                                                         <Button Content="Trade" FontSize="11" Padding="14,6"
@@ -596,7 +602,8 @@
                                                 <TextBlock FontFamily="{StaticResource IBMPlexMonoFont}"
                                                            FontSize="10"
                                                            Foreground="{StaticResource MeridianTextSubtleBrush}">
-                                                    <Run Text="{Binding Time}" /><Run Text=" ago" />
+                                                    <Run Text="{Binding Time}" />
+                                                    <Run Text=" ago" />
                                                 </TextBlock>
                                             </StackPanel>
                                         </Grid>

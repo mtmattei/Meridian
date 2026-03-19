@@ -101,6 +101,53 @@ public sealed partial class DashboardPage : Page
 
         var volume = await _marketData.GetVolumeAsync(CancellationToken.None);
         VolumeChart.VolumeData = volume.ToList();
+
+        // Pre-load sparkline data for watchlist rows (deferred to let ItemsRepeater render)
+        DispatcherQueue.TryEnqueue(async () =>
+        {
+            await Task.Delay(200); // Wait for ItemsRepeater to materialize
+            await PopulateSparklines();
+        });
+    }
+
+    private async Task PopulateSparklines()
+    {
+        try
+        {
+            var sparklines = new List<Controls.SparklineControl>();
+            FindSparklines(this, sparklines);
+
+            foreach (var spark in sparklines)
+            {
+                var ticker = ExtractTicker(spark.DataContext);
+                if (ticker == null) continue;
+
+                var history = await _marketData.GetStockHistoryAsync(ticker, CancellationToken.None);
+                if (history.Count == 0) continue;
+
+                // Use last 24 data points for mini chart
+                var points = history.TakeLast(24).Select(p => (double)p.Value).ToList();
+                spark.Points = points;
+                spark.IsPositive = points.Last() >= points.First();
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Sparkline load error: {ex.Message}");
+        }
+    }
+
+    private static void FindSparklines(DependencyObject parent, List<Controls.SparklineControl> results)
+    {
+        var count = VisualTreeHelper.GetChildrenCount(parent);
+        for (int i = 0; i < count; i++)
+        {
+            var child = VisualTreeHelper.GetChild(parent, i);
+            if (child is Controls.SparklineControl sc)
+                results.Add(sc);
+            else
+                FindSparklines(child, results);
+        }
     }
 
     // ── Trade Drawer ──────────────────────────────────────────────────
@@ -255,7 +302,7 @@ public sealed partial class DashboardPage : Page
     private void UpdateTickerScroll()
     {
         InitTickerTape();
-        TickerTranslate.X -= 2;
+        TickerTranslate.X -= 2.3; // 15% faster than 2px
         if (TickerTranslate.X < -1400)
             TickerTranslate.X = 0;
     }
