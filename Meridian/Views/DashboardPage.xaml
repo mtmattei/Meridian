@@ -72,20 +72,27 @@
                     Height="33"
                     BorderThickness="0,1"
                     BorderBrush="{StaticResource MeridianBorderBrush}">
-                <Grid>
-                    <TextBlock x:Name="TickerTapeText"
-                               AutomationProperties.AccessibilityView="Raw"
-                               FontFamily="{StaticResource IBMPlexMonoFont}"
-                               FontSize="11"
-                               Foreground="{StaticResource MeridianGainBrush}"
-                               MaxLines="1"
-                               TextTrimming="None">
-                        <TextBlock.RenderTransform>
-                            <TranslateTransform x:Name="TickerTranslate" />
-                        </TextBlock.RenderTransform>
-                    </TextBlock>
-                    <!-- Fade edges -->
-                    <Border HorizontalAlignment="Left" Width="40" IsHitTestVisible="False">
+                <Grid x:Name="TickerTapeContainer">
+                    <!-- Clipping ScrollViewer prevents text from overflowing -->
+                    <ScrollViewer HorizontalScrollBarVisibility="Hidden"
+                                  VerticalScrollBarVisibility="Disabled"
+                                  HorizontalScrollMode="Disabled"
+                                  VerticalScrollMode="Disabled"
+                                  IsTabStop="False">
+                        <TextBlock x:Name="TickerTapeText"
+                                   AutomationProperties.AccessibilityView="Raw"
+                                   FontFamily="{StaticResource IBMPlexMonoFont}"
+                                   FontSize="11"
+                                   Foreground="{StaticResource MeridianGainBrush}"
+                                   MaxLines="1"
+                                   TextTrimming="None">
+                            <TextBlock.RenderTransform>
+                                <TranslateTransform x:Name="TickerTranslate" />
+                            </TextBlock.RenderTransform>
+                        </TextBlock>
+                    </ScrollViewer>
+                    <!-- Fade edges: match page background color -->
+                    <Border HorizontalAlignment="Left" Width="50" IsHitTestVisible="False">
                         <Border.Background>
                             <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5">
                                 <GradientStop Color="#F6F4F0" Offset="0" />
@@ -93,7 +100,7 @@
                             </LinearGradientBrush>
                         </Border.Background>
                     </Border>
-                    <Border HorizontalAlignment="Right" Width="40" IsHitTestVisible="False">
+                    <Border HorizontalAlignment="Right" Width="50" IsHitTestVisible="False">
                         <Border.Background>
                             <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5">
                                 <GradientStop Color="#00F6F4F0" Offset="0" />
