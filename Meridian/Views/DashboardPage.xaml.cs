@@ -70,6 +70,13 @@ public sealed partial class DashboardPage : Page
 
         TradeDrawerPanel.CloseRequested += (_, _) => CloseTradeDrawer();
 
+        // Update clip rect when ticker container sizes
+        TickerTapeContainer.SizeChanged += (_, _) =>
+        {
+            TickerClip.Rect = new Windows.Foundation.Rect(
+                0, 0, TickerTapeContainer.ActualWidth, TickerTapeContainer.ActualHeight);
+        };
+
         Loaded += OnPageLoaded;
         Unloaded += OnPageUnloaded;
     }

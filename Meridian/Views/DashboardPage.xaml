@@ -78,6 +78,9 @@
                     BorderThickness="0,1"
                     BorderBrush="{StaticResource MeridianBorderBrush}">
                 <Grid x:Name="TickerTapeContainer">
+                    <Grid.Clip>
+                        <RectangleGeometry x:Name="TickerClip" />
+                    </Grid.Clip>
                     <!-- Dual-TextBlock marquee: A and B leapfrog for seamless infinite scroll -->
                     <TextBlock x:Name="TickerTapeTextA"
                                AutomationProperties.AccessibilityView="Raw"
@@ -458,7 +461,7 @@
                         <TextBox PlaceholderText="Search ticker or name…"
                                  Text="{Binding SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                  FontFamily="{StaticResource OutfitFont}"
-                                 FontSize="12" FontWeight="Light" CornerRadius="12" Padding="32,6,12,6"
+                                 FontSize="12" FontWeight="Thin" CornerRadius="12" Padding="32,6,12,6"
                                  Background="{StaticResource MeridianCardBrush}"
                                  BorderThickness="1"
                                  BorderBrush="{StaticResource MeridianBorderBrush}"
