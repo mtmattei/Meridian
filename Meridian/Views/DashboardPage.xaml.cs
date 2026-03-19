@@ -102,6 +102,9 @@ public sealed partial class DashboardPage : Page
     {
         try
         {
+            // Card entrance animation: fade in + slide up
+            AnimateCardEntrance();
+
             await LoadChartAsync(null);
             await LoadSkiaControlsAsync();
             _finnhub.Start();
@@ -110,6 +113,38 @@ public sealed partial class DashboardPage : Page
         {
             System.Diagnostics.Debug.WriteLine($"Page load error: {ex.Message}");
         }
+    }
+
+    private void AnimateCardEntrance()
+    {
+        // Chart card entrance: opacity 0→1 + translateY 24→0, 700ms
+        ChartCard.Opacity = 0;
+        ChartCardTranslate.Y = 24;
+
+        var fadeIn = new DoubleAnimation
+        {
+            From = 0, To = 1,
+            Duration = new Duration(TimeSpan.FromMilliseconds(700)),
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut },
+            BeginTime = TimeSpan.FromMilliseconds(150)
+        };
+        Storyboard.SetTarget(fadeIn, ChartCard);
+        Storyboard.SetTargetProperty(fadeIn, "Opacity");
+
+        var slideUp = new DoubleAnimation
+        {
+            From = 24, To = 0,
+            Duration = new Duration(TimeSpan.FromMilliseconds(700)),
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut },
+            BeginTime = TimeSpan.FromMilliseconds(150)
+        };
+        Storyboard.SetTarget(slideUp, ChartCard);
+        Storyboard.SetTargetProperty(slideUp, "(UIElement.RenderTransform).(TranslateTransform.Y)");
+
+        var sb = new Storyboard();
+        sb.Children.Add(fadeIn);
+        sb.Children.Add(slideUp);
+        sb.Begin();
     }
 
     private void OnPageUnloaded(object sender, RoutedEventArgs e)
@@ -469,7 +504,7 @@ public sealed partial class DashboardPage : Page
                 new[] { color.WithAlpha(60), color.WithAlpha(5) },
                 new SKPoint(0, 0), new SKPoint(0, 1));
 
-            PerformanceChart.AnimationsSpeed = TimeSpan.FromMilliseconds(1);
+            PerformanceChart.AnimationsSpeed = TimeSpan.FromMilliseconds(800);
             PerformanceChart.Series = new ISeries[]
             {
                 new LineSeries<double>
@@ -484,9 +519,10 @@ public sealed partial class DashboardPage : Page
                         var idx = (int)p.Index;
                         var date = idx < dates.Length && DateTime.TryParse(dates[idx], out var dt)
                             ? dt.ToString("MMM d, yyyy") : "";
-                        return string.IsNullOrEmpty(ticker)
-                            ? $"{date}\n${p.Model / 1000:N1}k"
-                            : $"{date}\n${p.Model:N2}";
+                        var value = string.IsNullOrEmpty(ticker)
+                            ? $"${p.Model / 1000:N1}k"
+                            : $"${p.Model:N2}";
+                        return $"{date}\n{value}";
                     },
                 }
             };
@@ -545,55 +581,11 @@ public sealed partial class DashboardPage : Page
             };
 
             UpdateChartHeader(ticker);
-            AnimateChartReveal();
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Chart load error: {ex.Message}");
         }
-    }
-
-    private void AnimateChartReveal()
-    {
-        ChartRevealMask.Visibility = Visibility.Visible;
-        ChartRevealMask.Opacity = 1;
-        ChartMaskTranslate.X = 0;
-
-        DispatcherQueue.TryEnqueue(async () =>
-        {
-            await Task.Delay(80);
-            var width = PerformanceChart.ActualWidth;
-            if (width <= 0) width = 900;
-
-            // Slide mask right to reveal chart left-to-right
-            var slideAnim = new DoubleAnimation
-            {
-                From = 0,
-                To = width + 40,
-                Duration = new Duration(TimeSpan.FromMilliseconds(1800)),
-                EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
-            };
-            Storyboard.SetTarget(slideAnim, ChartRevealMask);
-            Storyboard.SetTargetProperty(slideAnim, "(UIElement.RenderTransform).(TranslateTransform.X)");
-
-            // Fade out mask edge for softer reveal
-            var fadeAnim = new DoubleAnimation
-            {
-                From = 1,
-                To = 0,
-                BeginTime = TimeSpan.FromMilliseconds(1200),
-                Duration = new Duration(TimeSpan.FromMilliseconds(600)),
-                EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseIn }
-            };
-            Storyboard.SetTarget(fadeAnim, ChartRevealMask);
-            Storyboard.SetTargetProperty(fadeAnim, "Opacity");
-
-            var sb = new Storyboard();
-            sb.Children.Add(slideAnim);
-            sb.Children.Add(fadeAnim);
-            sb.Completed += (_, _) => ChartRevealMask.Visibility = Visibility.Collapsed;
-            sb.Begin();
-        });
     }
 
     private async void UpdateChartHeader(string? ticker)

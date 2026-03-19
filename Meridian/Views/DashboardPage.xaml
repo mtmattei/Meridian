@@ -206,12 +206,15 @@
                     </Grid.RowDefinitions>
 
                     <!-- PERFORMANCE CHART CARD -->
-                    <Border Grid.Row="0" CornerRadius="16" BorderThickness="1"
+                    <Border x:Name="ChartCard" Grid.Row="0" CornerRadius="16" BorderThickness="1"
                             BorderBrush="{StaticResource MeridianBorderBrush}"
                             Background="{StaticResource MeridianCardBrush}"
                             Padding="28,24,28,16"
                             PointerEntered="OnChartCardPointerEntered"
                             PointerExited="OnChartCardPointerExited">
+                        <Border.RenderTransform>
+                            <TranslateTransform x:Name="ChartCardTranslate" />
+                        </Border.RenderTransform>
                         <StackPanel Spacing="16">
                             <!-- Chart header: dynamic for portfolio vs stock detail -->
                             <Grid>
@@ -287,21 +290,12 @@
                                 </StackPanel>
                             </Grid>
 
-                            <!-- LiveCharts2 area chart with left-to-right reveal -->
-                            <Grid>
-                                <lvc:CartesianChart x:Name="PerformanceChart"
-                                                    Height="240"
-                                                    TooltipPosition="Top"
-                                                    ZoomMode="None"
-                                                    AutomationProperties.Name="Portfolio performance chart, 3 month view" />
-                                <Border x:Name="ChartRevealMask"
-                                        Background="{StaticResource MeridianCardBrush}"
-                                        IsHitTestVisible="False">
-                                    <Border.RenderTransform>
-                                        <TranslateTransform x:Name="ChartMaskTranslate" />
-                                    </Border.RenderTransform>
-                                </Border>
-                            </Grid>
+                            <!-- LiveCharts2 area chart -->
+                            <lvc:CartesianChart x:Name="PerformanceChart"
+                                                Height="240"
+                                                TooltipPosition="Top"
+                                                ZoomMode="None"
+                                                AutomationProperties.Name="Portfolio performance chart, 3 month view" />
                         </StackPanel>
                     </Border>
 
