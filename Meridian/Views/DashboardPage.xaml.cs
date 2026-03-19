@@ -812,6 +812,8 @@ public sealed partial class DashboardPage : Page
     {
         if (sender is Border b)
         {
+            // Don't clear highlight on the selected holding
+            if (b == _selectedHoldingBorder) return;
             b.BorderBrush = DefaultBorderBrush;
             b.Background = TransparentBg;
         }

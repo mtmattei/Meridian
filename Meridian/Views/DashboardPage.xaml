@@ -346,14 +346,14 @@
                                                         <StackPanel Grid.Row="0" Grid.Column="0"
                                                                     Orientation="Horizontal" Spacing="0"
                                                                     VerticalAlignment="Center">
-                                                            <TextBlock FontFamily="{StaticResource OutfitFont}"
-                                                                       FontSize="14" FontWeight="Bold"
-                                                                       Text="{Binding Ticker}" />
                                                             <!-- Pulsing green dot when selected -->
                                                             <Border Tag="ActiveDot" Visibility="Collapsed"
                                                                     Width="7" Height="7" CornerRadius="4"
                                                                     Background="{StaticResource MeridianGainBrush}"
-                                                                    VerticalAlignment="Center" Margin="6,0,0,0" />
+                                                                    VerticalAlignment="Center" Margin="0,0,6,0" />
+                                                            <TextBlock FontFamily="{StaticResource OutfitFont}"
+                                                                       FontSize="14" FontWeight="Bold"
+                                                                       Text="{Binding Ticker}" />
                                                             <TextBlock FontFamily="{StaticResource OutfitFont}"
                                                                        FontSize="10" VerticalAlignment="Center"
                                                                        Foreground="{StaticResource MeridianTextSubtleBrush}"
