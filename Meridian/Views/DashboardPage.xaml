@@ -205,7 +205,9 @@
                     <Border CornerRadius="16" BorderThickness="1"
                             BorderBrush="{StaticResource MeridianBorderBrush}"
                             Background="{StaticResource MeridianCardBrush}"
-                            Padding="28,24,28,16">
+                            Padding="28,24,28,16"
+                            PointerEntered="OnChartCardPointerEntered"
+                            PointerExited="OnChartCardPointerExited">
                         <StackPanel Spacing="16">
                             <!-- Chart header: dynamic for portfolio vs stock detail -->
                             <Grid>
@@ -252,18 +254,29 @@
                                 <!-- Timeframe selector -->
                                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="2">
                                     <Button Content="1D" FontSize="10" Padding="8,4" CornerRadius="6"
-                                            Background="Transparent" Foreground="{StaticResource MeridianTextSubtleBrush}" />
+                                            Background="Transparent" Foreground="{StaticResource MeridianTextSubtleBrush}"
+                                            BorderThickness="0" />
                                     <Button Content="1W" FontSize="10" Padding="8,4" CornerRadius="6"
-                                            Background="Transparent" Foreground="{StaticResource MeridianTextSubtleBrush}" />
+                                            Background="Transparent" Foreground="{StaticResource MeridianTextSubtleBrush}"
+                                            BorderThickness="0" />
                                     <Button Content="1M" FontSize="10" Padding="8,4" CornerRadius="6"
-                                            Background="Transparent" Foreground="{StaticResource MeridianTextSubtleBrush}" />
-                                    <Button Content="3M" FontSize="10" Padding="8,4" CornerRadius="6"
+                                            Background="Transparent" Foreground="{StaticResource MeridianTextSubtleBrush}"
+                                            BorderThickness="0" />
+                                    <Border CornerRadius="6" Padding="0"
                                             Background="{StaticResource MeridianGainBgTintBrush}"
-                                            Foreground="{StaticResource MeridianGainBrush}" />
+                                            BorderThickness="0,0,0,2"
+                                            BorderBrush="{StaticResource MeridianGainBrush}">
+                                        <Button Content="3M" FontSize="10" Padding="8,4"
+                                                Background="Transparent"
+                                                Foreground="{StaticResource MeridianGainBrush}"
+                                                BorderThickness="0" />
+                                    </Border>
                                     <Button Content="YTD" FontSize="10" Padding="8,4" CornerRadius="6"
-                                            Background="Transparent" Foreground="{StaticResource MeridianTextSubtleBrush}" />
+                                            Background="Transparent" Foreground="{StaticResource MeridianTextSubtleBrush}"
+                                            BorderThickness="0" />
                                     <Button Content="1Y" FontSize="10" Padding="8,4" CornerRadius="6"
-                                            Background="Transparent" Foreground="{StaticResource MeridianTextSubtleBrush}" />
+                                            Background="Transparent" Foreground="{StaticResource MeridianTextSubtleBrush}"
+                                            BorderThickness="0" />
                                 </StackPanel>
                             </Grid>
 
@@ -288,7 +301,7 @@
                         <Border Grid.Column="0" CornerRadius="16" BorderThickness="1"
                                 BorderBrush="{StaticResource MeridianBorderBrush}"
                                 Background="{StaticResource MeridianCardBrush}"
-                                Padding="24,22">
+                                Padding="24,22" VerticalAlignment="Stretch">
                             <StackPanel Spacing="12">
                                 <TextBlock Style="{StaticResource SectionLabel}" Text="HOLDINGS" />
                                 <ItemsRepeater ItemsSource="{Binding Holdings}">
@@ -631,13 +644,40 @@
                 <TextBlock Grid.Column="0" FontSize="10"
                            Foreground="{StaticResource MeridianTextSubtleBrush}"
                            Text="Simulated data for demonstration. Not financial advice." />
-                <TextBlock Grid.Column="1"
-                           Text="⣤⣴⣶⣷⣿⣶⣴⣤ AAPL ⣤⣴⣶"
-                           FontFamily="{StaticResource IBMPlexMonoFont}"
-                           FontSize="9" Opacity="0.4"
-                           HorizontalAlignment="Center"
-                           Foreground="{StaticResource MeridianTextSubtleBrush}"
-                           MaxWidth="300" />
+                <Grid Grid.Column="1" Margin="20,0">
+                    <ScrollViewer HorizontalScrollBarVisibility="Hidden"
+                                  VerticalScrollBarVisibility="Disabled"
+                                  HorizontalScrollMode="Disabled"
+                                  VerticalScrollMode="Disabled"
+                                  IsTabStop="False">
+                        <TextBlock x:Name="FooterTickerText"
+                                   AutomationProperties.AccessibilityView="Raw"
+                                   FontFamily="{StaticResource IBMPlexMonoFont}"
+                                   FontSize="9" Opacity="0.35"
+                                   Foreground="{StaticResource MeridianTextSubtleBrush}"
+                                   MaxLines="1" TextTrimming="None">
+                            <TextBlock.RenderTransform>
+                                <TranslateTransform x:Name="FooterTickerTranslate" />
+                            </TextBlock.RenderTransform>
+                        </TextBlock>
+                    </ScrollViewer>
+                    <Border HorizontalAlignment="Left" Width="30" IsHitTestVisible="False">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5">
+                                <GradientStop Color="{StaticResource MeridianBackground}" Offset="0" />
+                                <GradientStop Color="{StaticResource MeridianBackgroundTransparent}" Offset="1" />
+                            </LinearGradientBrush>
+                        </Border.Background>
+                    </Border>
+                    <Border HorizontalAlignment="Right" Width="30" IsHitTestVisible="False">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5">
+                                <GradientStop Color="{StaticResource MeridianBackgroundTransparent}" Offset="0" />
+                                <GradientStop Color="{StaticResource MeridianBackground}" Offset="1" />
+                            </LinearGradientBrush>
+                        </Border.Background>
+                    </Border>
+                </Grid>
                 <TextBlock Grid.Column="2"
                            FontFamily="{StaticResource IBMPlexMonoFont}"
                            FontSize="10"

@@ -6,6 +6,8 @@ using Meridian.Services;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
+using Microsoft.UI.Text;
+using Microsoft.UI.Xaml.Documents;
 using SkiaSharp;
 
 namespace Meridian.Views;
@@ -297,18 +299,45 @@ public sealed partial class DashboardPage : Page
 
     private void BuildTickerTapeText()
     {
-        // Use live Finnhub data if available, fall back to mock
         var tickers = _useLiveData
             ? _finnhub.GetLatestQuotes()
             : (IReadOnlyList<StreamTicker>)_marketData.GetStreamTickers();
 
-        var sb = new System.Text.StringBuilder();
-        for (int repeat = 0; repeat < 2; repeat++)
+        var gainBrush = (SolidColorBrush)Application.Current.Resources["MeridianGainBrush"];
+        var lossBrush = (SolidColorBrush)Application.Current.Resources["MeridianLossBrush"];
+
+        TickerTapeText.Inlines.Clear();
+
+        // Triple for seamless continuous loop — colored deltas + bold ticker symbols
+        for (int repeat = 0; repeat < 3; repeat++)
         {
             foreach (var t in tickers)
-                sb.Append($"⣤⣴⣶⣷ {t.Ticker} {t.Price} {t.Delta}  │  ");
+            {
+                TickerTapeText.Inlines.Add(new Run { Text = "⣤⣴⣶⣷ " });
+                TickerTapeText.Inlines.Add(new Run { Text = t.Ticker, FontWeight = FontWeights.Bold });
+                TickerTapeText.Inlines.Add(new Run { Text = $" {t.Price} " });
+                TickerTapeText.Inlines.Add(new Run
+                {
+                    Text = t.Delta,
+                    Foreground = t.IsUp ? gainBrush : lossBrush
+                });
+                TickerTapeText.Inlines.Add(new Run { Text = "  │  " });
+            }
         }
-        TickerTapeText.Text = sb.ToString();
+
+        // Also populate footer ticker (plain text, decorative)
+        BuildFooterTickerText(tickers);
+    }
+
+    private void BuildFooterTickerText(IReadOnlyList<StreamTicker> tickers)
+    {
+        var sb = new System.Text.StringBuilder();
+        for (int repeat = 0; repeat < 3; repeat++)
+        {
+            foreach (var t in tickers)
+                sb.Append($"⣤⣴⣶⣷ {t.Ticker} {t.Price}  ·  ");
+        }
+        FooterTickerText.Text = sb.ToString();
     }
 
     private void InitTickerTape()
@@ -332,8 +361,16 @@ public sealed partial class DashboardPage : Page
     {
         InitTickerTape();
         TickerTranslate.X -= 2.3;
-        if (TickerTranslate.X < -1400)
-            TickerTranslate.X = 0;
+        // Reset when one full segment has scrolled — seamless continuous loop
+        var segmentWidth = TickerTapeText.ActualWidth / 3.0;
+        if (segmentWidth > 0 && TickerTranslate.X < -segmentWidth)
+            TickerTranslate.X += segmentWidth;
+
+        // Footer ticker scroll (slower pace)
+        FooterTickerTranslate.X -= 1.0;
+        var footerWidth = FooterTickerText.ActualWidth / 3.0;
+        if (footerWidth > 0 && FooterTickerTranslate.X < -footerWidth)
+            FooterTickerTranslate.X += footerWidth;
     }
 
     private int _pulseOffset;
@@ -408,12 +445,17 @@ public sealed partial class DashboardPage : Page
             var color = isPositive ? GainColor : LossColor;
             var axisLabelPaint = new SolidColorPaint(AxisLabelColor);
 
+            // Gradient fill under the line chart (not the container)
+            var gradientFill = new LiveChartsCore.SkiaSharpView.Painting.LinearGradientPaint(
+                new[] { color.WithAlpha(60), color.WithAlpha(5) },
+                new SKPoint(0, 0), new SKPoint(0, 1));
+
             PerformanceChart.Series = new ISeries[]
             {
                 new LineSeries<double>
                 {
                     Values = values,
-                    Fill = new SolidColorPaint(color.WithAlpha(30)),
+                    Fill = gradientFill,
                     Stroke = new SolidColorPaint(color, 2.5f),
                     GeometrySize = 0,
                     LineSmoothness = 0.65,
@@ -655,6 +697,18 @@ public sealed partial class DashboardPage : Page
     {
         if (sender is FrameworkElement fe)
             fe.RenderTransform = null;
+    }
+
+    private void OnChartCardPointerEntered(object sender, PointerRoutedEventArgs e)
+    {
+        if (sender is Border b)
+            b.BorderBrush = HoverBorderBrush;
+    }
+
+    private void OnChartCardPointerExited(object sender, PointerRoutedEventArgs e)
+    {
+        if (sender is Border b)
+            b.BorderBrush = DefaultBorderBrush;
     }
 
     private void UpdateClock()
