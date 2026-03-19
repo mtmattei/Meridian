@@ -74,9 +74,9 @@ public sealed class SectorRingControl : SKXamlCanvas
         _centerFontHovered = new SKFont(outfitSemiBold, 13);
         _subFontDefault = new SKFont(outfitNormal, 9);
         _subFontHovered = new SKFont(outfitNormal, 11);
-        _legendNameFontNormal = new SKFont(outfitNormal, 11);
-        _legendNameFontBold = new SKFont(outfitSemiBold, 11);
-        _legendPctFont = new SKFont(plexMono, 11);
+        _legendNameFontNormal = new SKFont(outfitNormal, 13);
+        _legendNameFontBold = new SKFont(outfitSemiBold, 13);
+        _legendPctFont = new SKFont(plexMono, 13);
 
         PaintSurface += OnPaintSurface;
         PointerMoved += OnPointerMoved;
@@ -203,7 +203,7 @@ public sealed class SectorRingControl : SKXamlCanvas
         // Legend (right side)
         var legendX = centerX + outerRadius + 36;
         _legendX = legendX / scale;
-        var legendY = centerY - (sectors.Count * 22f / 2f);
+        var legendY = centerY - (sectors.Count * 24f / 2f);
 
         for (int i = 0; i < sectors.Count; i++)
         {
@@ -223,7 +223,7 @@ public sealed class SectorRingControl : SKXamlCanvas
             canvas.DrawText($"{sector.Pct:F1}%", w - 10, legendY + 2, SKTextAlign.Right, _legendPctFont, _legendPctPaint);
 
             _legendYPositions.Add(legendY / scale);
-            legendY += 22;
+            legendY += 24;
         }
     }
 }
