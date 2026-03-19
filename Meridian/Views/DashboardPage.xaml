@@ -461,7 +461,7 @@
                         <TextBox PlaceholderText="Search ticker or name…"
                                  Text="{Binding SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                  FontFamily="{StaticResource OutfitFont}"
-                                 FontSize="12" FontWeight="Thin" CornerRadius="12" Padding="32,6,12,6"
+                                 FontSize="12" FontWeight="SemiLight" CornerRadius="12" Padding="32,6,12,6"
                                  Background="{StaticResource MeridianCardBrush}"
                                  BorderThickness="1"
                                  BorderBrush="{StaticResource MeridianBorderBrush}"
