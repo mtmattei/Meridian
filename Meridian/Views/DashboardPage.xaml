@@ -457,20 +457,23 @@
                     </Grid.RowDefinitions>
 
                     <!-- Search Bar -->
-                    <Grid Grid.Row="0">
-                        <TextBox PlaceholderText="Search ticker or name…"
-                                 Text="{Binding SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                 FontFamily="{StaticResource OutfitFont}"
-                                 FontSize="12" FontWeight="SemiLight" CornerRadius="12" Padding="32,6,12,6"
-                                 Background="{StaticResource MeridianCardBrush}"
-                                 BorderThickness="1"
-                                 BorderBrush="{StaticResource MeridianBorderBrush}"
-                                 Height="36" />
+                    <Grid Grid.Row="0" Height="36">
+                        <Border CornerRadius="12"
+                                Background="{StaticResource MeridianCardBrush}"
+                                BorderThickness="1"
+                                BorderBrush="{StaticResource MeridianBorderBrush}"
+                                IsHitTestVisible="False" />
                         <FontIcon Glyph="&#xE721;" FontSize="13"
                                   HorizontalAlignment="Left" VerticalAlignment="Center"
                                   Margin="11,0,0,0" IsHitTestVisible="False"
                                   Foreground="{StaticResource MeridianTextSubtleBrush}" />
-                    </Grid>
+                        <TextBox PlaceholderText="Search ticker or name…"
+                                 Text="{Binding SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                 FontFamily="{StaticResource OutfitFont}"
+                                 FontSize="12" FontWeight="SemiLight" CornerRadius="12" Padding="32,6,12,6"
+                                 Background="Transparent"
+                                 BorderThickness="0"
+                                 Height="36" />
 
                     <!-- ══ WATCHLIST CARD ══ -->
                     <Border Grid.Row="1" CornerRadius="16" BorderThickness="1"

@@ -63,8 +63,8 @@ public sealed partial class DashboardPage : Page
         _clockTimer.Start();
         UpdateClock();
 
-        // Consolidated animation timer — 16ms tick (~60fps) for smooth scrolling
-        _animationTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(16) };
+        // Consolidated animation timer — 32ms tick (~30fps) for smooth scrolling
+        _animationTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(32) };
         _animationTimer.Tick += OnAnimationTick;
         _animationTimer.Start();
 
@@ -316,21 +316,21 @@ public sealed partial class DashboardPage : Page
         // Smooth ticker scroll every frame
         UpdateTickerScroll();
 
-        // Slower decorative animations (sub-divided from 60fps tick)
-        if (_animationFrame % 5 == 0)
-            BrailleSpinner.Text = SpinnerGlyphs[(_animationFrame / 5) % SpinnerGlyphs.Length];
+        // Slower decorative animations (sub-divided from 30fps tick)
+        if (_animationFrame % 3 == 0)
+            BrailleSpinner.Text = SpinnerGlyphs[(_animationFrame / 3) % SpinnerGlyphs.Length];
 
-        if (_animationFrame % 9 == 0)
+        if (_animationFrame % 5 == 0)
             UpdateBraillePulse();
 
         // Gain pill pulse: obvious breathing animation (opacity 0.45→1.0 + scale)
-        var phase = (_animationFrame % 188) / 188.0 * Math.PI * 2;
+        var phase = (_animationFrame % 94) / 94.0 * Math.PI * 2;
         GainPill.Opacity = 0.72 + 0.28 * Math.Sin(phase);
         var scale = 1.0 + 0.02 * Math.Sin(phase);
         GainPillScale.ScaleX = scale;
         GainPillScale.ScaleY = scale;
 
-        if (_animationFrame % 13 == 0)
+        if (_animationFrame % 7 == 0)
             UpdateBrailleActivity();
 
         // Pulsing green dot on selected holding
@@ -419,8 +419,8 @@ public sealed partial class DashboardPage : Page
         }
 
         // Scroll both TextBlocks left
-        TickerTranslateA.X -= 0.95;
-        TickerTranslateB.X -= 0.95;
+        TickerTranslateA.X -= 1.9;
+        TickerTranslateB.X -= 1.9;
 
         // Leapfrog: when fully off-screen left, jump behind the other
         if (TickerTranslateA.X < -_tickerWidth)
@@ -428,8 +428,8 @@ public sealed partial class DashboardPage : Page
         if (TickerTranslateB.X < -_tickerWidth)
             TickerTranslateB.X = TickerTranslateA.X + _tickerWidth;
 
-        // Footer ticker scroll
-        FooterTickerTranslate.X -= 0.29;
+        // Footer ticker scroll (doubled for 30fps)
+        FooterTickerTranslate.X -= 0.58;
     }
 
     private int _pulseOffset;
