@@ -474,6 +474,7 @@
                                  Background="Transparent"
                                  BorderThickness="0"
                                  Height="36" />
+                    </Grid>
 
                     <!-- ══ WATCHLIST CARD ══ -->
                     <Border Grid.Row="1" CornerRadius="16" BorderThickness="1"
