@@ -513,7 +513,7 @@
                     </Grid.RowDefinitions>
 
                     <!-- Search Bar -->
-                    <TextBox Grid.Row="0" PlaceholderText="Search ticker or name…"
+                    <TextBox x:Name="SearchBox" Grid.Row="0" PlaceholderText="Search ticker or name…"
                              Text="{Binding SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                              FontFamily="{StaticResource OutfitFont}"
                              FontSize="12" FontWeight="SemiLight" CornerRadius="12" Padding="12,6"
@@ -523,7 +523,7 @@
                              Height="36" />
 
                     <!-- ══ WATCHLIST CARD ══ -->
-                    <Border Grid.Row="1" CornerRadius="16" BorderThickness="1"
+                    <Border x:Name="WatchlistCard" Grid.Row="1" CornerRadius="16" BorderThickness="1"
                             BorderBrush="{ThemeResource MeridianBorderBrush}"
                             Background="{ThemeResource MeridianCardBrush}"
                             Margin="0,20,0,20"
@@ -532,7 +532,10 @@
                         <StackPanel>
                             <TextBlock Style="{StaticResource SectionLabel}"
                                        Text="WATCHLIST" Margin="22,20,22,12" />
-                            <ScrollViewer MaxHeight="440" VerticalScrollBarVisibility="Auto">
+                            <Grid>
+                            <ScrollViewer x:Name="WatchlistScrollViewer" MaxHeight="440"
+                                          VerticalScrollBarVisibility="Auto"
+                                          ViewChanged="OnWatchlistScrollChanged">
                             <ItemsRepeater ItemsSource="{Binding Watchlist}"
                                            Margin="0,0,0,8">
                                 <ItemsRepeater.Layout>
@@ -565,9 +568,14 @@
                                                                        Foreground="{x:Bind Pct, Converter={StaticResource GainLossBrush}}"
                                                                        Opacity="0.5"
                                                                        VerticalAlignment="Center" />
-                                                            <TextBlock Text="▾" FontSize="8"
+                                                            <TextBlock Tag="Chevron" Text="▾" FontSize="8"
                                                                        Foreground="{ThemeResource MeridianTextSubtleBrush}"
-                                                                       VerticalAlignment="Center" />
+                                                                       VerticalAlignment="Center"
+                                                                       RenderTransformOrigin="0.5,0.5">
+                                                                <TextBlock.RenderTransform>
+                                                                    <RotateTransform />
+                                                                </TextBlock.RenderTransform>
+                                                            </TextBlock>
                                                         </StackPanel>
                                                         <TextBlock Text="{x:Bind Name}" FontSize="11"
                                                                    Foreground="{ThemeResource MeridianTextSubtleBrush}"
@@ -594,10 +602,13 @@
                                                 </Grid>
                                             </Border>
 
-                                            <!-- Expanded panel (hidden by default) -->
+                                            <!-- Expanded panel (hidden by default, animates in) -->
                                             <Border Tag="ExpandedPanel" Visibility="Collapsed"
                                                     Background="{ThemeResource MeridianExpandedBgBrush}"
-                                                    Padding="22,14">
+                                                    Padding="22,14" Opacity="0">
+                                                <Border.RenderTransform>
+                                                    <CompositeTransform />
+                                                </Border.RenderTransform>
                                                 <StackPanel Spacing="12">
                                                     <!-- OHLC Grid -->
                                                     <Grid>
@@ -699,6 +710,38 @@
                                 </ItemsRepeater.ItemTemplate>
                             </ItemsRepeater>
                             </ScrollViewer>
+                            <!-- Scroll anticipation: top fade -->
+                            <Border x:Name="WatchlistTopMask" VerticalAlignment="Top" Height="24"
+                                    Opacity="0" IsHitTestVisible="False">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                        <GradientStop Color="{StaticResource MeridianCard}" Offset="0" />
+                                        <GradientStop Color="#00FFFFFF" Offset="1" />
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                            </Border>
+                            <!-- Scroll anticipation: bottom fade -->
+                            <Border x:Name="WatchlistBottomMask" VerticalAlignment="Bottom" Height="24"
+                                    Opacity="0" IsHitTestVisible="False">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,1" EndPoint="0,0">
+                                        <GradientStop Color="{StaticResource MeridianCard}" Offset="0" />
+                                        <GradientStop Color="#00FFFFFF" Offset="1" />
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                            </Border>
+                            <!-- Empty state gravity -->
+                            <StackPanel x:Name="WatchlistEmptyState" Visibility="Collapsed"
+                                        VerticalAlignment="Center" HorizontalAlignment="Center"
+                                        Margin="0,60,0,60">
+                                <TextBlock Text="⣿⣶⣤⣀⠀⣀⣤⣶⣿" FontSize="14"
+                                           HorizontalAlignment="Center" Opacity="0.15"
+                                           Foreground="{ThemeResource MeridianTextMutedBrush}" />
+                                <TextBlock Text="No results" FontSize="11" Margin="0,8,0,0"
+                                           HorizontalAlignment="Center"
+                                           Foreground="{ThemeResource MeridianTextSubtleBrush}" />
+                            </StackPanel>
+                            </Grid>
                         </StackPanel>
                     </Border>
 

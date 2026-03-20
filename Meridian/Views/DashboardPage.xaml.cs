@@ -383,6 +383,10 @@ public sealed partial class DashboardPage : Page
         // Session warmth: update orb hue every ~10s
         if (_animationFrame % 625 == 0)
             UpdateSessionWarmth();
+
+        // Empty state check every ~500ms
+        if (_animationFrame % 30 == 0)
+            CheckWatchlistEmpty();
     }
 
     // ── Ticker Tape ───────────────────────────────────────────────────
@@ -724,15 +728,132 @@ public sealed partial class DashboardPage : Page
         }
         if (expandedPanel is null) return;
 
+        var chevron = FindTaggedElement<TextBlock>(parent, "Chevron");
+
+        // Collapse previous panel (instant if different row)
         if (_currentExpandedPanel != null && _currentExpandedPanel != expandedPanel)
-            _currentExpandedPanel.Visibility = Visibility.Collapsed;
+        {
+            var prevChevron = FindTaggedElement<TextBlock>(_currentExpandedPanel.Parent as DependencyObject ?? this, "Chevron");
+            CollapseWatchlistPanel(_currentExpandedPanel, prevChevron);
+        }
 
         var isExpanding = expandedPanel.Visibility != Visibility.Visible;
-        expandedPanel.Visibility = isExpanding ? Visibility.Visible : Visibility.Collapsed;
-        _currentExpandedPanel = isExpanding ? expandedPanel : null;
+
+        if (isExpanding)
+        {
+            expandedPanel.Visibility = Visibility.Visible;
+            ExpandWatchlistPanel(expandedPanel, chevron);
+            _currentExpandedPanel = expandedPanel;
+        }
+        else
+        {
+            CollapseWatchlistPanel(expandedPanel, chevron);
+            _currentExpandedPanel = null;
+        }
 
         // Invalidate braille cache when watchlist layout changes
         _brailleBlocksCached = false;
+    }
+
+    private void ExpandWatchlistPanel(Border panel, TextBlock? chevron)
+    {
+        // Panel: fade in + slide down
+        var fadeIn = new DoubleAnimation
+        {
+            From = 0, To = 1,
+            Duration = new Duration(TimeSpan.FromMilliseconds(400)),
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+        };
+        Storyboard.SetTarget(fadeIn, panel);
+        Storyboard.SetTargetProperty(fadeIn, "Opacity");
+
+        var slideDown = new DoubleAnimation
+        {
+            From = -8, To = 0,
+            Duration = new Duration(TimeSpan.FromMilliseconds(400)),
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+        };
+        Storyboard.SetTarget(slideDown, panel);
+        Storyboard.SetTargetProperty(slideDown, "(UIElement.RenderTransform).(CompositeTransform.TranslateY)");
+
+        var sb = new Storyboard();
+        sb.Children.Add(fadeIn);
+        sb.Children.Add(slideDown);
+        sb.Begin();
+
+        // Chevron: rotate 0→180°
+        if (chevron?.RenderTransform is RotateTransform)
+        {
+            var rotate = new DoubleAnimation
+            {
+                To = 180,
+                Duration = new Duration(TimeSpan.FromMilliseconds(300)),
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+            };
+            Storyboard.SetTarget(rotate, chevron);
+            Storyboard.SetTargetProperty(rotate, "(UIElement.RenderTransform).(RotateTransform.Angle)");
+            var chevSb = new Storyboard();
+            chevSb.Children.Add(rotate);
+            chevSb.Begin();
+        }
+    }
+
+    private void CollapseWatchlistPanel(Border panel, TextBlock? chevron)
+    {
+        // Panel: fade out + slide up
+        var fadeOut = new DoubleAnimation
+        {
+            To = 0,
+            Duration = new Duration(TimeSpan.FromMilliseconds(300)),
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
+        };
+        Storyboard.SetTarget(fadeOut, panel);
+        Storyboard.SetTargetProperty(fadeOut, "Opacity");
+
+        var slideUp = new DoubleAnimation
+        {
+            To = -8,
+            Duration = new Duration(TimeSpan.FromMilliseconds(300)),
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
+        };
+        Storyboard.SetTarget(slideUp, panel);
+        Storyboard.SetTargetProperty(slideUp, "(UIElement.RenderTransform).(CompositeTransform.TranslateY)");
+
+        var sb = new Storyboard();
+        sb.Children.Add(fadeOut);
+        sb.Children.Add(slideUp);
+        sb.Completed += (_, _) => panel.Visibility = Visibility.Collapsed;
+        sb.Begin();
+
+        // Chevron: rotate back to 0°
+        if (chevron?.RenderTransform is RotateTransform)
+        {
+            var rotate = new DoubleAnimation
+            {
+                To = 0,
+                Duration = new Duration(TimeSpan.FromMilliseconds(300)),
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+            };
+            Storyboard.SetTarget(rotate, chevron);
+            Storyboard.SetTargetProperty(rotate, "(UIElement.RenderTransform).(RotateTransform.Angle)");
+            var chevSb = new Storyboard();
+            chevSb.Children.Add(rotate);
+            chevSb.Begin();
+        }
+    }
+
+    private static T? FindTaggedElement<T>(DependencyObject parent, string tag) where T : FrameworkElement
+    {
+        var count = VisualTreeHelper.GetChildrenCount(parent);
+        for (int i = 0; i < count; i++)
+        {
+            var child = VisualTreeHelper.GetChild(parent, i);
+            if (child is T fe && fe.Tag as string == tag)
+                return fe;
+            var found = FindTaggedElement<T>(child, tag);
+            if (found != null) return found;
+        }
+        return null;
     }
 
     private async void OnViewChartFromWatchlist(object sender, TappedRoutedEventArgs e)
@@ -1079,6 +1200,59 @@ public sealed partial class DashboardPage : Page
 
         _silenceExitSb = new Storyboard();
         _silenceExitSb.Children.Add(exitAnim);
+    }
+
+    // ── Scroll Anticipation ─────────────────────────────────────────
+
+    private void OnWatchlistScrollChanged(object sender, ScrollViewerViewChangedEventArgs e)
+    {
+        if (sender is not ScrollViewer sv) return;
+        bool atTop = sv.VerticalOffset < 4;
+        bool atBottom = sv.ScrollableHeight < 1 || sv.VerticalOffset + sv.ViewportHeight >= sv.ScrollableHeight - 4;
+
+        WatchlistTopMask.Opacity = atTop ? 0 : 1;
+        WatchlistBottomMask.Opacity = atBottom ? 0 : 1;
+    }
+
+    // ── Empty State Gravity ──────────────────────────────────────────
+
+    private bool _wasEmpty;
+
+    private void CheckWatchlistEmpty()
+    {
+        var hasSearch = !string.IsNullOrEmpty(SearchBox.Text);
+        var childCount = VisualTreeHelper.GetChildrenCount(WatchlistScrollViewer);
+        // ItemsRepeater inside ScrollViewer — check if repeater has materialized items
+        bool isEmpty = hasSearch && GetRepeaterItemCount() == 0;
+
+        if (isEmpty == _wasEmpty) return;
+        _wasEmpty = isEmpty;
+
+        WatchlistEmptyState.Visibility = isEmpty ? Visibility.Visible : Visibility.Collapsed;
+        WatchlistCard.BorderBrush = isEmpty
+            ? (SolidColorBrush)Application.Current.Resources["MeridianTextMutedBrush"]
+            : DefaultBorderBrush;
+    }
+
+    private int GetRepeaterItemCount()
+    {
+        // Walk into the ScrollViewer to find the ItemsRepeater and count children
+        var count = VisualTreeHelper.GetChildrenCount(WatchlistScrollViewer);
+        for (int i = 0; i < count; i++)
+        {
+            var child = VisualTreeHelper.GetChild(WatchlistScrollViewer, i);
+            if (child is ItemsRepeater repeater)
+                return VisualTreeHelper.GetChildrenCount(repeater);
+            // ScrollViewer wraps content in a ScrollContentPresenter
+            var innerCount = VisualTreeHelper.GetChildrenCount(child);
+            for (int j = 0; j < innerCount; j++)
+            {
+                var inner = VisualTreeHelper.GetChild(child, j);
+                if (inner is ItemsRepeater rep)
+                    return VisualTreeHelper.GetChildrenCount(rep);
+            }
+        }
+        return -1; // unknown — don't trigger empty state
     }
 
     // ── Weight Whisper Helper ────────────────────────────────────────
