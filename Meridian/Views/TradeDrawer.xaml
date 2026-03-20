@@ -43,7 +43,14 @@
                                 Foreground="{ThemeResource MeridianTextPrimaryBrush}"
                                 BorderThickness="1"
                                 BorderBrush="{ThemeResource MeridianBorderBrush}"
-                                AutomationProperties.Name="Close trade drawer" />
+                                RenderTransformOrigin="0.5,0.5"
+                                PointerEntered="OnClosePointerEntered"
+                                PointerExited="OnClosePointerExited"
+                                AutomationProperties.Name="Close trade drawer">
+                            <Button.RenderTransform>
+                                <RotateTransform />
+                            </Button.RenderTransform>
+                        </Button>
                     </Grid>
 
                     <!-- Buy/Sell Toggle -->
@@ -137,8 +144,12 @@
                                     Background="Transparent"
                                     AutomationProperties.Name="Stop order" />
                         </StackPanel>
-                        <!-- Limit/Stop price input (hidden for Market) -->
-                        <StackPanel x:Name="LimitPricePanel" Visibility="Collapsed" Spacing="4">
+                        <!-- Limit/Stop price input (hidden for Market, fadeUp on appear) -->
+                        <StackPanel x:Name="LimitPricePanel" Visibility="Collapsed" Spacing="4"
+                                    Opacity="0" RenderTransformOrigin="0.5,0">
+                            <StackPanel.RenderTransform>
+                                <CompositeTransform />
+                            </StackPanel.RenderTransform>
                             <TextBlock Text="LIMIT PRICE" Style="{StaticResource SectionLabel}" />
                             <TextBox x:Name="LimitPriceInput"
                                      PlaceholderText="$0.00"
@@ -175,14 +186,21 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- Submit Button -->
+                    <!-- Submit Button (hover scale 1.02) -->
                     <Button x:Name="SubmitButton"
                             HorizontalAlignment="Stretch"
                             FontSize="14" FontWeight="Bold"
                             Padding="0,14" CornerRadius="12"
                             Foreground="White"
                             Content="Enter quantity" IsEnabled="False"
-                            AutomationProperties.Name="Submit order" />
+                            RenderTransformOrigin="0.5,0.5"
+                            PointerEntered="OnSubmitPointerEntered"
+                            PointerExited="OnSubmitPointerExited"
+                            AutomationProperties.Name="Submit order">
+                        <Button.RenderTransform>
+                            <CompositeTransform />
+                        </Button.RenderTransform>
+                    </Button>
                 </StackPanel>
             </ScrollViewer>
 

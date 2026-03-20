@@ -2,7 +2,9 @@ using System.Diagnostics;
 using Meridian.Models;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Animation;
 
 namespace Meridian.Views;
 
@@ -144,7 +146,16 @@ public sealed partial class TradeDrawer : UserControl
         StopButton.Background = type == "stop" ? AccentTintBrush : TransparentBrush;
         StopButton.Foreground = type == "stop" ? AccentBrush : inactiveForeground;
 
-        LimitPricePanel.Visibility = type != "market" ? Visibility.Visible : Visibility.Collapsed;
+        // Limit price panel with fadeUp animation
+        if (type != "market" && LimitPricePanel.Visibility != Visibility.Visible)
+        {
+            LimitPricePanel.Visibility = Visibility.Visible;
+            AnimateLimitPriceFadeUp();
+        }
+        else if (type == "market")
+        {
+            LimitPricePanel.Visibility = Visibility.Collapsed;
+        }
 
         // Reset limit price when switching to Market (per interaction spec edge case)
         if (type == "market")
@@ -211,5 +222,81 @@ public sealed partial class TradeDrawer : UserControl
         {
             Debug.WriteLine($"TradeDrawer.Submit failed: {ex}");
         }
+    }
+
+    // ── Micro-interactions ───────────────────────────────────────────
+
+    private void OnSubmitPointerEntered(object sender, PointerRoutedEventArgs e)
+    {
+        if (sender is not Button btn || btn.RenderTransform is not CompositeTransform) return;
+        var anim = new DoubleAnimation { To = 1.02, Duration = new Duration(TimeSpan.FromMilliseconds(200)),
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } };
+        var animY = new DoubleAnimation { To = 1.02, Duration = new Duration(TimeSpan.FromMilliseconds(200)),
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } };
+        Storyboard.SetTarget(anim, btn);
+        Storyboard.SetTargetProperty(anim, "(UIElement.RenderTransform).(CompositeTransform.ScaleX)");
+        Storyboard.SetTarget(animY, btn);
+        Storyboard.SetTargetProperty(animY, "(UIElement.RenderTransform).(CompositeTransform.ScaleY)");
+        var sb = new Storyboard(); sb.Children.Add(anim); sb.Children.Add(animY); sb.Begin();
+    }
+
+    private void OnSubmitPointerExited(object sender, PointerRoutedEventArgs e)
+    {
+        if (sender is not Button btn || btn.RenderTransform is not CompositeTransform) return;
+        var anim = new DoubleAnimation { To = 1.0, Duration = new Duration(TimeSpan.FromMilliseconds(200)),
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } };
+        var animY = new DoubleAnimation { To = 1.0, Duration = new Duration(TimeSpan.FromMilliseconds(200)),
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } };
+        Storyboard.SetTarget(anim, btn);
+        Storyboard.SetTargetProperty(anim, "(UIElement.RenderTransform).(CompositeTransform.ScaleX)");
+        Storyboard.SetTarget(animY, btn);
+        Storyboard.SetTargetProperty(animY, "(UIElement.RenderTransform).(CompositeTransform.ScaleY)");
+        var sb = new Storyboard(); sb.Children.Add(anim); sb.Children.Add(animY); sb.Begin();
+    }
+
+    private void OnClosePointerEntered(object sender, PointerRoutedEventArgs e)
+    {
+        if (sender is not Button btn || btn.RenderTransform is not RotateTransform) return;
+        var anim = new DoubleAnimation { To = 90, Duration = new Duration(TimeSpan.FromMilliseconds(200)),
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } };
+        Storyboard.SetTarget(anim, btn);
+        Storyboard.SetTargetProperty(anim, "(UIElement.RenderTransform).(RotateTransform.Angle)");
+        var sb = new Storyboard(); sb.Children.Add(anim); sb.Begin();
+    }
+
+    private void OnClosePointerExited(object sender, PointerRoutedEventArgs e)
+    {
+        if (sender is not Button btn || btn.RenderTransform is not RotateTransform) return;
+        var anim = new DoubleAnimation { To = 0, Duration = new Duration(TimeSpan.FromMilliseconds(200)),
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } };
+        Storyboard.SetTarget(anim, btn);
+        Storyboard.SetTargetProperty(anim, "(UIElement.RenderTransform).(RotateTransform.Angle)");
+        var sb = new Storyboard(); sb.Children.Add(anim); sb.Begin();
+    }
+
+    private void AnimateLimitPriceFadeUp()
+    {
+        var fadeIn = new DoubleAnimation
+        {
+            From = 0, To = 1,
+            Duration = new Duration(TimeSpan.FromMilliseconds(300)),
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+        };
+        Storyboard.SetTarget(fadeIn, LimitPricePanel);
+        Storyboard.SetTargetProperty(fadeIn, "Opacity");
+
+        var slideUp = new DoubleAnimation
+        {
+            From = 12, To = 0,
+            Duration = new Duration(TimeSpan.FromMilliseconds(300)),
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+        };
+        Storyboard.SetTarget(slideUp, LimitPricePanel);
+        Storyboard.SetTargetProperty(slideUp, "(UIElement.RenderTransform).(CompositeTransform.TranslateY)");
+
+        var sb = new Storyboard();
+        sb.Children.Add(fadeIn);
+        sb.Children.Add(slideUp);
+        sb.Begin();
     }
 }

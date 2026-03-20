@@ -1335,4 +1335,103 @@ public sealed partial class DashboardPage : Page
 
         LivelineChart.CrosshairX = _crosshairCurrentX;
     }
+
+    // ── Ink Spread (Timeframe Buttons) ───────────────────────────────
+
+    private string _activeTimeframe = "3M";
+
+    private void OnTimeframeClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button btn || btn.Tag is not string tf) return;
+        if (tf == _activeTimeframe) return;
+
+        _activeTimeframe = tf;
+        UpdateTimeframeStyles();
+        AnimateTimeframeInk(btn);
+    }
+
+    private void UpdateTimeframeStyles()
+    {
+        var gainBg = (SolidColorBrush)Application.Current.Resources["MeridianGainBgTintBrush"];
+        var gainFg = (SolidColorBrush)Application.Current.Resources["MeridianGainBrush"];
+        var subtleFg = (SolidColorBrush)Application.Current.Resources["MeridianTextSubtleBrush"];
+
+        foreach (var child in TimeframeSelector.Children)
+        {
+            if (child is Button b && b.Tag is string tf)
+            {
+                bool active = tf == _activeTimeframe;
+                b.Background = active ? gainBg : TransparentBg;
+                b.Foreground = active ? gainFg : subtleFg;
+                b.BorderThickness = active ? new Thickness(0, 0, 0, 2) : new Thickness(0);
+                b.BorderBrush = active ? gainFg : null;
+            }
+        }
+    }
+
+    private void AnimateTimeframeInk(Button btn)
+    {
+        btn.RenderTransformOrigin = new Windows.Foundation.Point(0.5, 0.5);
+        btn.RenderTransform = new CompositeTransform();
+
+        // Press-down then overshoot-spring — visible at small button scale
+        var animX = new DoubleAnimationUsingKeyFrames();
+        animX.KeyFrames.Add(new LinearDoubleKeyFrame
+            { Value = 0.75, KeyTime = KeyTime.FromTimeSpan(TimeSpan.Zero) });
+        animX.KeyFrames.Add(new EasingDoubleKeyFrame
+        {
+            Value = 1.0,
+            KeyTime = KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(400)),
+            EasingFunction = new ElasticEase { EasingMode = EasingMode.EaseOut, Oscillations = 1, Springiness = 5 }
+        });
+        Storyboard.SetTarget(animX, btn);
+        Storyboard.SetTargetProperty(animX, "(UIElement.RenderTransform).(CompositeTransform.ScaleX)");
+
+        var animY = new DoubleAnimationUsingKeyFrames();
+        animY.KeyFrames.Add(new LinearDoubleKeyFrame
+            { Value = 0.75, KeyTime = KeyTime.FromTimeSpan(TimeSpan.Zero) });
+        animY.KeyFrames.Add(new EasingDoubleKeyFrame
+        {
+            Value = 1.0,
+            KeyTime = KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(400)),
+            EasingFunction = new ElasticEase { EasingMode = EasingMode.EaseOut, Oscillations = 1, Springiness = 5 }
+        });
+        Storyboard.SetTarget(animY, btn);
+        Storyboard.SetTargetProperty(animY, "(UIElement.RenderTransform).(CompositeTransform.ScaleY)");
+
+        // Brief opacity flash to sell the "ink" effect
+        var flash = new DoubleAnimationUsingKeyFrames();
+        flash.KeyFrames.Add(new LinearDoubleKeyFrame
+            { Value = 0.5, KeyTime = KeyTime.FromTimeSpan(TimeSpan.Zero) });
+        flash.KeyFrames.Add(new EasingDoubleKeyFrame
+        {
+            Value = 1.0,
+            KeyTime = KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(300)),
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+        });
+        Storyboard.SetTarget(flash, btn);
+        Storyboard.SetTargetProperty(flash, "Opacity");
+
+        var sb = new Storyboard();
+        sb.Children.Add(animX);
+        sb.Children.Add(animY);
+        sb.Children.Add(flash);
+        sb.Begin();
+    }
+
+    // ── Search Focus Ring ────────────────────────────────────────────
+
+    private void OnSearchFocused(object sender, RoutedEventArgs e)
+    {
+        // WinUI TextBox overrides BorderBrush in focused VisualState,
+        // so we animate the wrapper Border instead
+        SearchFocusRing.BorderBrush = (SolidColorBrush)Application.Current.Resources["MeridianAccentBrush"];
+        SearchFocusRing.BorderThickness = new Thickness(2);
+    }
+
+    private void OnSearchUnfocused(object sender, RoutedEventArgs e)
+    {
+        SearchFocusRing.BorderBrush = DefaultBorderBrush;
+        SearchFocusRing.BorderThickness = new Thickness(1);
+    }
 }

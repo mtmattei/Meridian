@@ -308,32 +308,30 @@
                                     </StackPanel>
                                 </StackPanel>
 
-                                <!-- Timeframe selector -->
-                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="2">
-                                    <Button Content="1D" FontSize="10" Padding="8,4" CornerRadius="6"
+                                <!-- Timeframe selector (ink spread on click) -->
+                                <StackPanel x:Name="TimeframeSelector" Grid.Column="1"
+                                            Orientation="Horizontal" Spacing="2">
+                                    <Button Content="1D" Tag="1D" FontSize="10" Padding="8,4" CornerRadius="6"
                                             Background="Transparent" Foreground="{ThemeResource MeridianTextSubtleBrush}"
-                                            BorderThickness="0" />
-                                    <Button Content="1W" FontSize="10" Padding="8,4" CornerRadius="6"
+                                            BorderThickness="0" Click="OnTimeframeClick" />
+                                    <Button Content="1W" Tag="1W" FontSize="10" Padding="8,4" CornerRadius="6"
                                             Background="Transparent" Foreground="{ThemeResource MeridianTextSubtleBrush}"
-                                            BorderThickness="0" />
-                                    <Button Content="1M" FontSize="10" Padding="8,4" CornerRadius="6"
+                                            BorderThickness="0" Click="OnTimeframeClick" />
+                                    <Button Content="1M" Tag="1M" FontSize="10" Padding="8,4" CornerRadius="6"
                                             Background="Transparent" Foreground="{ThemeResource MeridianTextSubtleBrush}"
-                                            BorderThickness="0" />
-                                    <Border CornerRadius="6" Padding="0"
+                                            BorderThickness="0" Click="OnTimeframeClick" />
+                                    <Button Content="3M" Tag="3M" FontSize="10" Padding="8,4" CornerRadius="6"
                                             Background="{ThemeResource MeridianGainBgTintBrush}"
+                                            Foreground="{ThemeResource MeridianGainBrush}"
                                             BorderThickness="0,0,0,2"
-                                            BorderBrush="{ThemeResource MeridianGainBrush}">
-                                        <Button Content="3M" FontSize="10" Padding="8,4"
-                                                Background="Transparent"
-                                                Foreground="{ThemeResource MeridianGainBrush}"
-                                                BorderThickness="0" />
-                                    </Border>
-                                    <Button Content="YTD" FontSize="10" Padding="8,4" CornerRadius="6"
+                                            BorderBrush="{ThemeResource MeridianGainBrush}"
+                                            Click="OnTimeframeClick" />
+                                    <Button Content="YTD" Tag="YTD" FontSize="10" Padding="8,4" CornerRadius="6"
                                             Background="Transparent" Foreground="{ThemeResource MeridianTextSubtleBrush}"
-                                            BorderThickness="0" />
-                                    <Button Content="1Y" FontSize="10" Padding="8,4" CornerRadius="6"
+                                            BorderThickness="0" Click="OnTimeframeClick" />
+                                    <Button Content="1Y" Tag="1Y" FontSize="10" Padding="8,4" CornerRadius="6"
                                             Background="Transparent" Foreground="{ThemeResource MeridianTextSubtleBrush}"
-                                            BorderThickness="0" />
+                                            BorderThickness="0" Click="OnTimeframeClick" />
                                 </StackPanel>
                             </Grid>
 
@@ -512,15 +510,22 @@
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
-                    <!-- Search Bar -->
-                    <TextBox x:Name="SearchBox" Grid.Row="0" PlaceholderText="Search ticker or name…"
-                             Text="{Binding SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                             FontFamily="{StaticResource OutfitFont}"
-                             FontSize="12" FontWeight="SemiLight" CornerRadius="12" Padding="12,6"
-                             Background="{ThemeResource MeridianCardBrush}"
-                             BorderThickness="1"
-                             BorderBrush="{ThemeResource MeridianBorderBrush}"
-                             Height="36" />
+                    <!-- Search Bar (focus ring wraps TextBox) -->
+                    <Border x:Name="SearchFocusRing" Grid.Row="0"
+                            CornerRadius="12" BorderThickness="1"
+                            BorderBrush="{ThemeResource MeridianBorderBrush}"
+                            Background="{ThemeResource MeridianCardBrush}"
+                            Height="36">
+                        <TextBox x:Name="SearchBox" PlaceholderText="Search ticker or name…"
+                                 Text="{Binding SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                 FontFamily="{StaticResource OutfitFont}"
+                                 FontSize="12" FontWeight="SemiLight" Padding="12,6"
+                                 Background="Transparent"
+                                 BorderThickness="0"
+                                 GotFocus="OnSearchFocused"
+                                 LostFocus="OnSearchUnfocused"
+                                 Style="{x:Null}" />
+                    </Border>
 
                     <!-- ══ WATCHLIST CARD ══ -->
                     <Border x:Name="WatchlistCard" Grid.Row="1" CornerRadius="16" BorderThickness="1"
