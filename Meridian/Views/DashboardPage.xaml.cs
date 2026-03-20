@@ -45,6 +45,14 @@ public sealed partial class DashboardPage : Page
     private Storyboard? _silenceEnterSb;
     private Storyboard? _silenceExitSb;
 
+    // Chart Data Settle — gauge-needle overshoot
+    private Storyboard? _chartSettleSb;
+
+    // Tooltip Magnetism — crosshair tracking
+    private double _crosshairTargetX = double.NaN;
+    private double _crosshairCurrentX = double.NaN;
+    private bool _crosshairVisible;
+
     // Session warmth — hue drifts warmer the longer the session runs
     private readonly DateTime _sessionStartUtc = DateTime.UtcNow;
     private static readonly (double H, double S, double L, byte A)[] OrbBaseHsl =
@@ -328,6 +336,9 @@ public sealed partial class DashboardPage : Page
         // Smooth ticker scroll every frame (must be 60fps)
         UpdateTickerScroll();
 
+        // Tooltip Magnetism: smooth crosshair tracking (every frame)
+        UpdateCrosshair();
+
         // Pulse animations every 2nd frame (30fps is smooth enough for breathing)
         if (_animationFrame % 2 == 0)
         {
@@ -572,6 +583,7 @@ public sealed partial class DashboardPage : Page
             LivelineChart.IsLoading = false;
 
             UpdateChartHeader(ticker);
+            PlayChartSettleAnimation();
         }
         catch (Exception ex)
         {
@@ -1076,5 +1088,77 @@ public sealed partial class DashboardPage : Page
         if (dataContext is Holding h) return (double)h.MarketValue;
         try { return (double)((dynamic)dataContext!).MarketValue; }
         catch { return 0; }
+    }
+
+    // ── Chart Data Settle ────────────────────────────────────────────
+
+    private void PlayChartSettleAnimation()
+    {
+        _chartSettleSb?.Stop();
+
+        // Gauge-needle overshoot: fires 800ms after data push (lerp mostly converged)
+        var anim = new DoubleAnimationUsingKeyFrames
+        {
+            BeginTime = TimeSpan.FromMilliseconds(800)
+        };
+        anim.KeyFrames.Add(new LinearDoubleKeyFrame
+            { Value = 1.0, KeyTime = KeyTime.FromTimeSpan(TimeSpan.Zero) });
+        anim.KeyFrames.Add(new LinearDoubleKeyFrame
+            { Value = 1.04, KeyTime = KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(100)) });
+        anim.KeyFrames.Add(new SplineDoubleKeyFrame
+        {
+            Value = 0.99,
+            KeyTime = KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(400)),
+            KeySpline = new KeySpline { ControlPoint1 = new Windows.Foundation.Point(0.36, 0), ControlPoint2 = new Windows.Foundation.Point(0.66, -0.56) }
+        });
+        anim.KeyFrames.Add(new EasingDoubleKeyFrame
+        {
+            Value = 1.0,
+            KeyTime = KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(700)),
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+        });
+
+        Storyboard.SetTarget(anim, ChartSettleWrapper);
+        Storyboard.SetTargetProperty(anim, "(UIElement.RenderTransform).(CompositeTransform.ScaleY)");
+
+        _chartSettleSb = new Storyboard();
+        _chartSettleSb.Children.Add(anim);
+        _chartSettleSb.Begin();
+    }
+
+    // ── Tooltip Magnetism ────────────────────────────────────────────
+
+    private void OnChartPointerMoved(object sender, PointerRoutedEventArgs e)
+    {
+        var pos = e.GetCurrentPoint(LivelineChart).Position;
+        _crosshairTargetX = pos.X;
+        _crosshairVisible = true;
+    }
+
+    private void OnChartPointerExited(object sender, PointerRoutedEventArgs e)
+    {
+        _crosshairVisible = false;
+    }
+
+    private void UpdateCrosshair()
+    {
+        if (!_crosshairVisible)
+        {
+            if (!double.IsNaN(_crosshairCurrentX))
+            {
+                _crosshairCurrentX = double.NaN;
+                LivelineChart.CrosshairX = double.NaN;
+            }
+            return;
+        }
+
+        if (double.IsNaN(_crosshairTargetX)) return;
+
+        if (double.IsNaN(_crosshairCurrentX))
+            _crosshairCurrentX = _crosshairTargetX;
+        else
+            _crosshairCurrentX += (_crosshairTargetX - _crosshairCurrentX) * 0.45;
+
+        LivelineChart.CrosshairX = _crosshairCurrentX;
     }
 }

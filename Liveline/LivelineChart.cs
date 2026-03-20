@@ -158,6 +158,25 @@ public partial class LivelineChart : UserControl
             chart._canvas.FillOpacity = (float)(double)e.NewValue;
     }
 
+    public static readonly DependencyProperty CrosshairXProperty =
+        DependencyProperty.Register(nameof(CrosshairX), typeof(double), typeof(LivelineChart),
+            new PropertyMetadata(double.NaN, OnCrosshairXChanged));
+
+    /// <summary>
+    /// X position for the interactive crosshair. NaN = hidden.
+    /// </summary>
+    public double CrosshairX
+    {
+        get => (double)GetValue(CrosshairXProperty);
+        set => SetValue(CrosshairXProperty, value);
+    }
+
+    private static void OnCrosshairXChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is LivelineChart chart)
+            chart._canvas.CrosshairX = (float)(double)e.NewValue;
+    }
+
     #endregion
 
     // Keep ShowMomentum as a convenience alias

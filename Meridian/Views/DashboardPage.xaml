@@ -337,15 +337,22 @@
                                 </StackPanel>
                             </Grid>
 
-                            <!-- Liveline animated chart -->
-                            <ll:LivelineChart x:Name="LivelineChart"
-                                              Height="240"
-                                              ShowGrid="True"
-                                              ShowBadge="True"
-                                              ShowFill="True"
-                                              LerpSpeed="0.04"
-                                              Momentum="True"
-                                              AutomationProperties.Name="Portfolio performance chart, 3 month view" />
+                            <!-- Liveline animated chart (settle wrapper for gauge-needle overshoot) -->
+                            <Border x:Name="ChartSettleWrapper" RenderTransformOrigin="0.5,1.0">
+                                <Border.RenderTransform>
+                                    <CompositeTransform x:Name="ChartSettleTransform" />
+                                </Border.RenderTransform>
+                                <ll:LivelineChart x:Name="LivelineChart"
+                                                  Height="240"
+                                                  ShowGrid="True"
+                                                  ShowBadge="True"
+                                                  ShowFill="True"
+                                                  LerpSpeed="0.04"
+                                                  Momentum="True"
+                                                  PointerMoved="OnChartPointerMoved"
+                                                  PointerExited="OnChartPointerExited"
+                                                  AutomationProperties.Name="Portfolio performance chart, 3 month view" />
+                            </Border>
                         </StackPanel>
                         </Grid>
                     </Border>

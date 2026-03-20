@@ -31,6 +31,7 @@ public class LivelineChartCanvas : SKCanvasElement
     private double _breathPhase;
     private const int BreathingPointCount = 60;
     private float _fillOpacity = 1.0f;
+    private float _crosshairX = float.NaN;
 
     /// <summary>
     /// Multiplier for fill gradient top alpha (1.0 = default, higher = denser).
@@ -39,6 +40,15 @@ public class LivelineChartCanvas : SKCanvasElement
     {
         get => _fillOpacity;
         set { _fillOpacity = value; Invalidate(); }
+    }
+
+    /// <summary>
+    /// X position for the crosshair in logical pixels. NaN = hidden.
+    /// </summary>
+    public float CrosshairX
+    {
+        get => _crosshairX;
+        set { _crosshairX = value; Invalidate(); }
     }
 
     public void UpdateState(
@@ -165,6 +175,10 @@ public class LivelineChartCanvas : SKCanvasElement
         // 5. Badge (drawn last so it overlays everything)
         if (_showBadge)
             BadgeRenderer.Draw(canvas, w, h, _currentValue, _lerp.CurrentBadgeY, minY, maxY, _palette);
+
+        // 6. Crosshair + tooltip (drawn on top of everything)
+        if (!float.IsNaN(_crosshairX))
+            CrosshairRenderer.Draw(canvas, w, h, _lerp.CurrentY, _times, minY, maxY, _crosshairX, _palette);
 
         if (_isLoading)
             DrawLoadingOrEmpty(canvas, w, h);
