@@ -97,6 +97,9 @@ public sealed partial class DashboardPage : Page
                 0, 0, TickerTapeContainer.ActualWidth, TickerTapeContainer.ActualHeight);
         };
 
+        // Keyboard shortcuts (handledEventsToo catches Escape even from focused TextBoxes)
+        AddHandler(KeyDownEvent, new KeyEventHandler(OnPageKeyDown), true);
+
         Loaded += OnPageLoaded;
         Unloaded += OnPageUnloaded;
     }
@@ -251,7 +254,11 @@ public sealed partial class DashboardPage : Page
         _drawerOpenSb = new Storyboard();
         _drawerOpenSb.Children.Add(openBackdrop);
         _drawerOpenSb.Children.Add(openSlide);
-        _drawerOpenSb.Completed += (_, _) => _isDrawerAnimating = false;
+        _drawerOpenSb.Completed += (_, _) =>
+        {
+            _isDrawerAnimating = false;
+            TradeDrawerPanel.FocusQuantityInput();
+        };
 
         // Close storyboard
         var closeSlide = new DoubleAnimation
@@ -1433,5 +1440,41 @@ public sealed partial class DashboardPage : Page
     {
         SearchFocusRing.BorderBrush = DefaultBorderBrush;
         SearchFocusRing.BorderThickness = new Thickness(1);
+    }
+
+    // ── Keyboard Shortcuts ───────────────────────────────────────────
+
+    private void OnPageKeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
+    {
+        var ctrl = Microsoft.UI.Input.InputKeyboardSource
+            .GetKeyStateForCurrentThread(Windows.System.VirtualKey.Control)
+            .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
+
+        // Ctrl+K → focus search
+        if (ctrl && e.Key == Windows.System.VirtualKey.K)
+        {
+            SearchBox.Focus(FocusState.Programmatic);
+            e.Handled = true;
+            return;
+        }
+
+        // Escape → contextual dismiss (drawer → search → holding selection)
+        if (e.Key == Windows.System.VirtualKey.Escape)
+        {
+            if (TradeDrawerPanel.Visibility == Visibility.Visible)
+            {
+                CloseTradeDrawer();
+            }
+            else if (!string.IsNullOrEmpty(SearchBox.Text))
+            {
+                SearchBox.Text = "";
+                Focus(FocusState.Programmatic); // unfocus search box
+            }
+            else if (_currentChartTicker != null)
+            {
+                OnBackButtonClick(this, new RoutedEventArgs());
+            }
+            e.Handled = true;
+        }
     }
 }

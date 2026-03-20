@@ -92,6 +92,11 @@ public sealed partial class TradeDrawer : UserControl
         UpdatePreview();
     }
 
+    public void FocusQuantityInput()
+    {
+        QuantityInput.Focus(FocusState.Programmatic);
+    }
+
     public void SetStock(Stock stock)
     {
         _stock = stock;
