@@ -138,6 +138,26 @@ public partial class LivelineChart : UserControl
         set => SetValue(IsPausedProperty, value);
     }
 
+    public static readonly DependencyProperty FillOpacityProperty =
+        DependencyProperty.Register(nameof(FillOpacity), typeof(double), typeof(LivelineChart),
+            new PropertyMetadata(1.0, OnFillOpacityChanged));
+
+    /// <summary>
+    /// Multiplier for fill gradient opacity (1.0 = default, higher = denser).
+    /// Used by Weight Whisper interaction.
+    /// </summary>
+    public double FillOpacity
+    {
+        get => (double)GetValue(FillOpacityProperty);
+        set => SetValue(FillOpacityProperty, value);
+    }
+
+    private static void OnFillOpacityChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is LivelineChart chart)
+            chart._canvas.FillOpacity = (float)(double)e.NewValue;
+    }
+
     #endregion
 
     // Keep ShowMomentum as a convenience alias

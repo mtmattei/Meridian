@@ -19,6 +19,39 @@
     </Page.Resources>
 
     <Grid>
+    <!-- Ambient orbs (session warmth — hue drifts warmer over time) -->
+    <Grid x:Name="AmbientOrbLayer" IsHitTestVisible="False">
+        <Ellipse Width="600" Height="600"
+                 HorizontalAlignment="Left" VerticalAlignment="Top"
+                 Margin="-150,-100,0,0">
+            <Ellipse.Fill>
+                <RadialGradientBrush>
+                    <GradientStop x:Name="Orb1Center" Color="#0A2D6A4F" Offset="0" />
+                    <GradientStop Color="#00F6F4F0" Offset="1" />
+                </RadialGradientBrush>
+            </Ellipse.Fill>
+        </Ellipse>
+        <Ellipse Width="450" Height="450"
+                 HorizontalAlignment="Right" VerticalAlignment="Center"
+                 Margin="0,0,-80,0">
+            <Ellipse.Fill>
+                <RadialGradientBrush>
+                    <GradientStop x:Name="Orb2Center" Color="#08C9A96E" Offset="0" />
+                    <GradientStop Color="#00F6F4F0" Offset="1" />
+                </RadialGradientBrush>
+            </Ellipse.Fill>
+        </Ellipse>
+        <Ellipse Width="380" Height="380"
+                 HorizontalAlignment="Left" VerticalAlignment="Bottom"
+                 Margin="200,0,0,-60">
+            <Ellipse.Fill>
+                <RadialGradientBrush>
+                    <GradientStop x:Name="Orb3Center" Color="#062D6A4F" Offset="0" />
+                    <GradientStop Color="#00F6F4F0" Offset="1" />
+                </RadialGradientBrush>
+            </Ellipse.Fill>
+        </Ellipse>
+    </Grid>
     <ScrollViewer>
         <Grid MaxWidth="1400" HorizontalAlignment="Center" Padding="32,20">
             <Grid.RowDefinitions>
@@ -218,7 +251,8 @@
                     </Grid.RowDefinitions>
 
                     <!-- PERFORMANCE CHART CARD -->
-                    <Border x:Name="ChartCard" Grid.Row="0" CornerRadius="16" BorderThickness="1"
+                    <Grid Grid.Row="0">
+                    <Border x:Name="ChartCard" CornerRadius="16" BorderThickness="1"
                             BorderBrush="{ThemeResource MeridianBorderBrush}"
                             Background="{ThemeResource MeridianCardBrush}"
                             Padding="28,24,28,16"
@@ -227,6 +261,7 @@
                         <Border.RenderTransform>
                             <TranslateTransform x:Name="ChartCardTranslate" />
                         </Border.RenderTransform>
+                        <Grid x:Name="ChartContentLayer">
                         <StackPanel Spacing="16">
                             <!-- Chart header: dynamic for portfolio vs stock detail -->
                             <Grid>
@@ -312,7 +347,16 @@
                                               Momentum="True"
                                               AutomationProperties.Name="Portfolio performance chart, 3 month view" />
                         </StackPanel>
+                        </Grid>
                     </Border>
+                    <!-- Market breathing glow -->
+                    <Border x:Name="ChartBreathingGlow" CornerRadius="16" BorderThickness="2"
+                            Opacity="0" IsHitTestVisible="False">
+                        <Border.BorderBrush>
+                            <SolidColorBrush Color="{StaticResource MeridianGain}" />
+                        </Border.BorderBrush>
+                    </Border>
+                    </Grid>
 
                     <!-- HOLDINGS + ALLOCATION ROW -->
                     <Grid Grid.Row="1" Margin="0,20,0,0">
@@ -338,10 +382,14 @@
                                             <Border CornerRadius="12" BorderThickness="1"
                                                     BorderBrush="{ThemeResource MeridianBorderBrush}"
                                                     Padding="12,14"
+                                                    RenderTransformOrigin="0.5,0.5"
                                                     Tapped="OnHoldingTapped"
                                                     PointerEntered="OnCardPointerEntered"
                                                     PointerExited="OnCardPointerExited"
                                                     AutomationProperties.Name="{x:Bind Ticker}">
+                                                <Border.RenderTransform>
+                                                    <CompositeTransform />
+                                                </Border.RenderTransform>
                                                 <StackPanel Spacing="6">
                                                     <Grid>
                                                         <Grid.ColumnDefinitions>

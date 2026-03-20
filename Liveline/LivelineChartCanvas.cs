@@ -30,6 +30,16 @@ public class LivelineChartCanvas : SKCanvasElement
     private bool _hasData;
     private double _breathPhase;
     private const int BreathingPointCount = 60;
+    private float _fillOpacity = 1.0f;
+
+    /// <summary>
+    /// Multiplier for fill gradient top alpha (1.0 = default, higher = denser).
+    /// </summary>
+    public float FillOpacity
+    {
+        get => _fillOpacity;
+        set { _fillOpacity = value; Invalidate(); }
+    }
 
     public void UpdateState(
         IList<LivelinePoint>? data,
@@ -141,8 +151,13 @@ public class LivelineChartCanvas : SKCanvasElement
         double liveDotY = _lerp.CurrentY[^1];
         GridRenderer.DrawTrackingLine(canvas, w, h, liveDotY, minY, maxY, _palette);
 
-        // 3. Line + fill
-        LineRenderer.Draw(canvas, w, h, _lerp.CurrentY, minY, maxY, _showFill, _palette);
+        // 3. Line + fill (apply Weight Whisper fill opacity modifier)
+        var renderPalette = _fillOpacity == 1.0f ? _palette : _palette with
+        {
+            FillTop = ColorHelper.WithAlpha(_palette.FillTop,
+                (byte)Math.Clamp(_palette.FillTop.Alpha * _fillOpacity, 0, 255))
+        };
+        LineRenderer.Draw(canvas, w, h, _lerp.CurrentY, minY, maxY, _showFill, renderPalette);
 
         // 4. Live dot + momentum arrow
         MomentumRenderer.Draw(canvas, w, h, _lerp.CurrentY, minY, maxY, _momentumDirection, _palette);

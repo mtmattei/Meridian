@@ -1,5 +1,6 @@
 using Liveline;
 using Liveline.Models;
+using Meridian.Helpers;
 using Meridian.Presentation;
 using Meridian.Services;
 using Microsoft.UI.Xaml.Input;
@@ -29,6 +30,29 @@ public sealed partial class DashboardPage : Page
     private static SolidColorBrush? _defaultBorderBrush;
     private static SolidColorBrush? _hoverBgBrush;
     private static SolidColorBrush? _transparentBg;
+
+    // Market breathing
+    private bool _isMarketOpen;
+
+    // Weighted Paper — spring hover lift
+    private Storyboard? _activeCardEnterSb;
+
+    // Weight Whisper — chart gradient density on holding hover
+    private double _chartFillTarget = 1.0;
+    private double _chartFillCurrent = 1.0;
+
+    // Silence on Leave — chart content exhale
+    private Storyboard? _silenceEnterSb;
+    private Storyboard? _silenceExitSb;
+
+    // Session warmth — hue drifts warmer the longer the session runs
+    private readonly DateTime _sessionStartUtc = DateTime.UtcNow;
+    private static readonly (double H, double S, double L, byte A)[] OrbBaseHsl =
+    [
+        (153.5, 0.405, 0.296, 10),  // Green (#2D6A4F)
+        (39.0,  0.458, 0.610,  8),  // Gold (#C9A96E)
+        (160.0, 0.380, 0.300,  6),  // Teal-green
+    ];
 
     private static SolidColorBrush HoverBorderBrush => _hoverBorderBrush ??= (SolidColorBrush)Application.Current.Resources["MeridianAccentBrush"];
     private static SolidColorBrush DefaultBorderBrush => _defaultBorderBrush ??= (SolidColorBrush)Application.Current.Resources["MeridianBorderBrush"];
@@ -316,6 +340,16 @@ public sealed partial class DashboardPage : Page
 
             if (_selectedHoldingDot != null)
                 _selectedHoldingDot.Opacity = 0.4 + 0.6 * (0.5 + 0.5 * sinVal);
+
+            // Market breathing: 5s sinusoidal glow on chart card
+            UpdateMarketBreathing();
+
+            // Weight Whisper: smoothly interpolate chart fill opacity
+            if (Math.Abs(_chartFillCurrent - _chartFillTarget) > 0.001)
+            {
+                _chartFillCurrent += (_chartFillTarget - _chartFillCurrent) * 0.08;
+                LivelineChart.FillOpacity = _chartFillCurrent;
+            }
         }
 
         // Slower decorative animations
@@ -330,7 +364,14 @@ public sealed partial class DashboardPage : Page
 
         // Clock update ~1s (62 * 16ms ≈ 992ms)
         if (_animationFrame % 62 == 0)
+        {
             UpdateClock();
+            _isMarketOpen = MarketHoursHelper.IsMarketOpen();
+        }
+
+        // Session warmth: update orb hue every ~10s
+        if (_animationFrame % 625 == 0)
+            UpdateSessionWarmth();
     }
 
     // ── Ticker Tape ───────────────────────────────────────────────────
@@ -472,20 +513,24 @@ public sealed partial class DashboardPage : Page
         CacheBrailleBlocks();
         if (_brailleActivityBlocks.Count == 0) return;
 
-        _brailleActivityFrame = (_brailleActivityFrame + 1) % 100;
-
-        _brailleActivitySb.Clear();
-        for (int i = 0; i < 6; i++)
-        {
-            var phase = (_brailleActivityFrame + i * 2) % (BrailleActivityGlyphs.Length * 2);
-            if (phase >= BrailleActivityGlyphs.Length)
-                phase = BrailleActivityGlyphs.Length * 2 - 1 - phase;
-            _brailleActivitySb.Append(BrailleActivityGlyphs[Math.Clamp(phase, 0, BrailleActivityGlyphs.Length - 1)]);
-        }
-        var text = _brailleActivitySb.ToString();
+        _brailleActivityFrame = (_brailleActivityFrame + 1) % 10_000;
 
         foreach (var tb in _brailleActivityBlocks)
-            tb.Text = text;
+        {
+            var pct = ExtractPct(tb.DataContext);
+            var intensity = Math.Min(1.0, Math.Abs(pct) / 2.0 + 0.15);
+            var seed = Math.Abs(tb.DataContext?.GetHashCode() ?? 0) * 0.01;
+
+            _brailleActivitySb.Clear();
+            for (int i = 0; i < 6; i++)
+            {
+                var v = (Math.Sin(_brailleActivityFrame * 0.3 * intensity + i * 0.9 + seed) * 0.5 + 0.5) * intensity;
+                var level = (int)Math.Round(v * (BrailleActivityGlyphs.Length - 1));
+                _brailleActivitySb.Append(BrailleActivityGlyphs[Math.Clamp(level, 0, BrailleActivityGlyphs.Length - 1)]);
+            }
+            tb.Text = _brailleActivitySb.ToString();
+            tb.Opacity = 0.25 + intensity * 0.65;
+        }
     }
 
     // ── Chart (Liveline) ──────────────────────────────────────────────
@@ -541,7 +586,6 @@ public sealed partial class DashboardPage : Page
             ChartLabel.Text = "PERFORMANCE";
             StockDetailPanel.Visibility = Visibility.Collapsed;
             BackButton.Visibility = Visibility.Collapsed;
-            LivelineChart.Height = 240; // Restore full height for portfolio mode
             return;
         }
 
@@ -560,9 +604,6 @@ public sealed partial class DashboardPage : Page
 
             StockDetailPanel.Visibility = Visibility.Visible;
             BackButton.Visibility = Visibility.Visible;
-
-            // Reduce chart height for stock detail mode (210px vs 240px)
-            LivelineChart.Height = 210;
         }
         catch (Exception ex)
         {
@@ -733,6 +774,17 @@ public sealed partial class DashboardPage : Page
         {
             b.BorderBrush = HoverBorderBrush;
             b.Background = HoverBgBrush;
+
+            // Weighted Paper: press-down-then-lift spring animation
+            AnimateWeightedPaperEnter(b);
+
+            // Weight Whisper: shift chart gradient density proportional to weight
+            var marketValue = ExtractMarketValue(b.DataContext);
+            if (marketValue > 0)
+            {
+                var weightRatio = Math.Clamp(marketValue / 22000.0, 0.05, 1.0);
+                _chartFillTarget = 1.0 + weightRatio * 0.5;
+            }
         }
     }
 
@@ -744,6 +796,12 @@ public sealed partial class DashboardPage : Page
             if (b == _selectedHoldingBorder) return;
             b.BorderBrush = DefaultBorderBrush;
             b.Background = TransparentBg;
+
+            // Weighted Paper: return spring
+            AnimateWeightedPaperExit(b);
+
+            // Weight Whisper: reset gradient density
+            _chartFillTarget = 1.0;
         }
     }
 
@@ -774,16 +832,249 @@ public sealed partial class DashboardPage : Page
     {
         if (sender is Border b)
             b.BorderBrush = HoverBorderBrush;
+
+        // Silence on Leave: snap content to full opacity
+        if (sender == ChartCard)
+        {
+            EnsureSilenceStoryboards();
+            _silenceExitSb!.Stop();
+            _silenceEnterSb!.Begin();
+        }
     }
 
     private void OnChartCardPointerExited(object sender, PointerRoutedEventArgs e)
     {
         if (sender is Border b)
             b.BorderBrush = DefaultBorderBrush;
+
+        // Silence on Leave: exhale — dip to 92% then recover
+        if (sender == ChartCard)
+        {
+            EnsureSilenceStoryboards();
+            _silenceEnterSb!.Stop();
+            _silenceExitSb!.Begin();
+        }
     }
 
     private void UpdateClock()
     {
         ClockText.Text = DateTime.Now.ToString("ddd, MMM d · hh:mm:ss tt");
+    }
+
+    // ── Market Breathing ─────────────────────────────────────────────
+
+    private void UpdateMarketBreathing()
+    {
+        if (_isMarketOpen)
+        {
+            // 5-second sinusoidal cycle (313 frames at 16ms ≈ 5s)
+            var breathPhase = (_animationFrame % 313) / 313.0 * Math.PI * 2;
+            var breathVal = (Math.Sin(breathPhase) + 1) / 2; // 0 to 1
+            ChartBreathingGlow.Opacity = breathVal * 0.15;
+        }
+        else if (ChartBreathingGlow.Opacity > 0)
+        {
+            // Ease-out fade when market closes (~1.2s)
+            ChartBreathingGlow.Opacity *= 0.95;
+            if (ChartBreathingGlow.Opacity < 0.001) ChartBreathingGlow.Opacity = 0;
+        }
+    }
+
+    // ── Session Warmth ───────────────────────────────────────────────
+
+    private void UpdateSessionWarmth()
+    {
+        var elapsed = (DateTime.UtcNow - _sessionStartUtc).TotalSeconds;
+        var hueShift = Math.Min(elapsed * 0.02, 25.0);
+        if (hueShift < 0.1) return; // No visible change yet
+
+        Orb1Center.Color = HslToColor(OrbBaseHsl[0].H + hueShift, OrbBaseHsl[0].S, OrbBaseHsl[0].L, OrbBaseHsl[0].A);
+        Orb2Center.Color = HslToColor(OrbBaseHsl[1].H + hueShift, OrbBaseHsl[1].S, OrbBaseHsl[1].L, OrbBaseHsl[1].A);
+        Orb3Center.Color = HslToColor(OrbBaseHsl[2].H + hueShift, OrbBaseHsl[2].S, OrbBaseHsl[2].L, OrbBaseHsl[2].A);
+    }
+
+    private static Windows.UI.Color HslToColor(double h, double s, double l, byte a)
+    {
+        h %= 360;
+        if (h < 0) h += 360;
+        var c = (1 - Math.Abs(2 * l - 1)) * s;
+        var x = c * (1 - Math.Abs(h / 60 % 2 - 1));
+        var m = l - c / 2;
+
+        double r, g, b;
+        if (h < 60) { r = c; g = x; b = 0; }
+        else if (h < 120) { r = x; g = c; b = 0; }
+        else if (h < 180) { r = 0; g = c; b = x; }
+        else if (h < 240) { r = 0; g = x; b = c; }
+        else if (h < 300) { r = x; g = 0; b = c; }
+        else { r = c; g = 0; b = x; }
+
+        return Windows.UI.Color.FromArgb(a,
+            (byte)((r + m) * 255),
+            (byte)((g + m) * 255),
+            (byte)((b + m) * 255));
+    }
+
+    // ── Data-Driven Braille Helper ───────────────────────────────────
+
+    private static double ExtractPct(object? dataContext)
+    {
+        if (dataContext is Stock s) return (double)s.Pct;
+        try { return (double)((dynamic)dataContext!).Pct; }
+        catch { return 0; }
+    }
+
+    // ── Weighted Paper ───────────────────────────────────────────────
+
+    private void AnimateWeightedPaperEnter(Border card)
+    {
+        if (card.RenderTransform is not CompositeTransform) return;
+
+        _activeCardEnterSb?.Stop();
+
+        // TranslateY: press → lift → settle back to origin
+        var translateAnim = new DoubleAnimationUsingKeyFrames();
+        translateAnim.KeyFrames.Add(new LinearDoubleKeyFrame
+            { Value = 0, KeyTime = KeyTime.FromTimeSpan(TimeSpan.Zero) });
+        translateAnim.KeyFrames.Add(new LinearDoubleKeyFrame
+            { Value = 1.5, KeyTime = KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(80)) });
+        translateAnim.KeyFrames.Add(new EasingDoubleKeyFrame
+        {
+            Value = -2,
+            KeyTime = KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(400)),
+            EasingFunction = new ElasticEase { EasingMode = EasingMode.EaseOut, Oscillations = 1, Springiness = 4 }
+        });
+        translateAnim.KeyFrames.Add(new EasingDoubleKeyFrame
+        {
+            Value = 0,
+            KeyTime = KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(700)),
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+        });
+        Storyboard.SetTarget(translateAnim, card);
+        Storyboard.SetTargetProperty(translateAnim, "(UIElement.RenderTransform).(CompositeTransform.TranslateY)");
+
+        // Scale: subtle elevation once settled — card feels like it's floating
+        var scaleXAnim = new DoubleAnimationUsingKeyFrames();
+        scaleXAnim.KeyFrames.Add(new LinearDoubleKeyFrame
+            { Value = 1.0, KeyTime = KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(400)) });
+        scaleXAnim.KeyFrames.Add(new EasingDoubleKeyFrame
+        {
+            Value = 1.015,
+            KeyTime = KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(700)),
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+        });
+        Storyboard.SetTarget(scaleXAnim, card);
+        Storyboard.SetTargetProperty(scaleXAnim, "(UIElement.RenderTransform).(CompositeTransform.ScaleX)");
+
+        var scaleYAnim = new DoubleAnimationUsingKeyFrames();
+        scaleYAnim.KeyFrames.Add(new LinearDoubleKeyFrame
+            { Value = 1.0, KeyTime = KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(400)) });
+        scaleYAnim.KeyFrames.Add(new EasingDoubleKeyFrame
+        {
+            Value = 1.015,
+            KeyTime = KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(700)),
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+        });
+        Storyboard.SetTarget(scaleYAnim, card);
+        Storyboard.SetTargetProperty(scaleYAnim, "(UIElement.RenderTransform).(CompositeTransform.ScaleY)");
+
+        _activeCardEnterSb = new Storyboard();
+        _activeCardEnterSb.Children.Add(translateAnim);
+        _activeCardEnterSb.Children.Add(scaleXAnim);
+        _activeCardEnterSb.Children.Add(scaleYAnim);
+        _activeCardEnterSb.Begin();
+    }
+
+    private void AnimateWeightedPaperExit(Border card)
+    {
+        if (card.RenderTransform is not CompositeTransform) return;
+
+        _activeCardEnterSb?.Stop();
+
+        var translateAnim = new DoubleAnimation
+        {
+            To = 0,
+            Duration = new Duration(TimeSpan.FromMilliseconds(400)),
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+        };
+        Storyboard.SetTarget(translateAnim, card);
+        Storyboard.SetTargetProperty(translateAnim, "(UIElement.RenderTransform).(CompositeTransform.TranslateY)");
+
+        var scaleXAnim = new DoubleAnimation
+        {
+            To = 1.0,
+            Duration = new Duration(TimeSpan.FromMilliseconds(400)),
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+        };
+        Storyboard.SetTarget(scaleXAnim, card);
+        Storyboard.SetTargetProperty(scaleXAnim, "(UIElement.RenderTransform).(CompositeTransform.ScaleX)");
+
+        var scaleYAnim = new DoubleAnimation
+        {
+            To = 1.0,
+            Duration = new Duration(TimeSpan.FromMilliseconds(400)),
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+        };
+        Storyboard.SetTarget(scaleYAnim, card);
+        Storyboard.SetTargetProperty(scaleYAnim, "(UIElement.RenderTransform).(CompositeTransform.ScaleY)");
+
+        var sb = new Storyboard();
+        sb.Children.Add(translateAnim);
+        sb.Children.Add(scaleXAnim);
+        sb.Children.Add(scaleYAnim);
+        sb.Begin();
+    }
+
+    // ── Silence on Leave ─────────────────────────────────────────────
+
+    private void EnsureSilenceStoryboards()
+    {
+        if (_silenceEnterSb != null) return;
+
+        // Enter: snap to 1.0 (150ms)
+        var enterAnim = new DoubleAnimation
+        {
+            To = 1.0,
+            Duration = new Duration(TimeSpan.FromMilliseconds(150)),
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
+        };
+        Storyboard.SetTarget(enterAnim, ChartContentLayer);
+        Storyboard.SetTargetProperty(enterAnim, "Opacity");
+
+        _silenceEnterSb = new Storyboard();
+        _silenceEnterSb.Children.Add(enterAnim);
+
+        // Exit: hold → dip → recover (200ms delay, 200ms dip, 400ms recovery)
+        var exitAnim = new DoubleAnimationUsingKeyFrames();
+        exitAnim.KeyFrames.Add(new LinearDoubleKeyFrame
+            { Value = 1.0, KeyTime = KeyTime.FromTimeSpan(TimeSpan.Zero) });
+        exitAnim.KeyFrames.Add(new LinearDoubleKeyFrame
+            { Value = 1.0, KeyTime = KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(200)) });
+        exitAnim.KeyFrames.Add(new EasingDoubleKeyFrame
+        {
+            Value = 0.92,
+            KeyTime = KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(400)),
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+        });
+        exitAnim.KeyFrames.Add(new EasingDoubleKeyFrame
+        {
+            Value = 1.0,
+            KeyTime = KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(800)),
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseInOut }
+        });
+        Storyboard.SetTarget(exitAnim, ChartContentLayer);
+        Storyboard.SetTargetProperty(exitAnim, "Opacity");
+
+        _silenceExitSb = new Storyboard();
+        _silenceExitSb.Children.Add(exitAnim);
+    }
+
+    // ── Weight Whisper Helper ────────────────────────────────────────
+
+    private static double ExtractMarketValue(object? dataContext)
+    {
+        if (dataContext is Holding h) return (double)h.MarketValue;
+        try { return (double)((dynamic)dataContext!).MarketValue; }
+        catch { return 0; }
     }
 }
