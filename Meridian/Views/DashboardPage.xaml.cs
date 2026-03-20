@@ -971,7 +971,13 @@ public sealed partial class DashboardPage : Page
     private void OnChartCardPointerEntered(object sender, PointerRoutedEventArgs e)
     {
         if (sender is Border b)
+        {
             b.BorderBrush = HoverBorderBrush;
+
+            // Card shadow: subtle lift (skip ChartCard — has its own transforms)
+            if (sender != ChartCard)
+                AnimateCardLift(b, true);
+        }
 
         // Silence on Leave: snap content to full opacity
         if (sender == ChartCard)
@@ -985,7 +991,12 @@ public sealed partial class DashboardPage : Page
     private void OnChartCardPointerExited(object sender, PointerRoutedEventArgs e)
     {
         if (sender is Border b)
+        {
             b.BorderBrush = DefaultBorderBrush;
+
+            if (sender != ChartCard)
+                AnimateCardLift(b, false);
+        }
 
         // Silence on Leave: exhale — dip to 92% then recover
         if (sender == ChartCard)
@@ -994,6 +1005,48 @@ public sealed partial class DashboardPage : Page
             _silenceEnterSb!.Stop();
             _silenceExitSb!.Begin();
         }
+    }
+
+    private void AnimateCardLift(Border card, bool lifting)
+    {
+        if (card.RenderTransform is not CompositeTransform)
+        {
+            card.RenderTransformOrigin = new Windows.Foundation.Point(0.5, 0.5);
+            card.RenderTransform = new CompositeTransform();
+        }
+
+        var translateAnim = new DoubleAnimation
+        {
+            To = lifting ? -3 : 0,
+            Duration = new Duration(TimeSpan.FromMilliseconds(300)),
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+        };
+        Storyboard.SetTarget(translateAnim, card);
+        Storyboard.SetTargetProperty(translateAnim, "(UIElement.RenderTransform).(CompositeTransform.TranslateY)");
+
+        var scaleX = new DoubleAnimation
+        {
+            To = lifting ? 1.008 : 1.0,
+            Duration = new Duration(TimeSpan.FromMilliseconds(300)),
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+        };
+        Storyboard.SetTarget(scaleX, card);
+        Storyboard.SetTargetProperty(scaleX, "(UIElement.RenderTransform).(CompositeTransform.ScaleX)");
+
+        var scaleY = new DoubleAnimation
+        {
+            To = lifting ? 1.008 : 1.0,
+            Duration = new Duration(TimeSpan.FromMilliseconds(300)),
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+        };
+        Storyboard.SetTarget(scaleY, card);
+        Storyboard.SetTargetProperty(scaleY, "(UIElement.RenderTransform).(CompositeTransform.ScaleY)");
+
+        var sb = new Storyboard();
+        sb.Children.Add(translateAnim);
+        sb.Children.Add(scaleX);
+        sb.Children.Add(scaleY);
+        sb.Begin();
     }
 
     private void UpdateClock()
