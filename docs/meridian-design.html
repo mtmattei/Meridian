@@ -494,7 +494,7 @@ function TakeawaySlide() {
 /* ═══════════════════════════════════════════════════════════════
    CAROUSEL ROOT
    ═══════════════════════════════════════════════════════════════ */
-export default function Carousel() {
+function Carousel() {
   const TOTAL = 3 + INTERACTIONS.length + 1; // title + philosophy + arch + 11 interactions + takeaway
   const [slide, setSlide] = useState(0);
   const [dir, setDir] = useState(0);
