@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Designing Without Thought — Fukasawa Interaction Patterns</title>
+<meta name="description" content="11 interaction patterns inspired by Naoto Fukasawa, implemented with C#, WinUI 3, XAML, and Uno Platform.">
+<meta property="og:title" content="Designing Without Thought — Meridian Capital Terminal">
+<meta property="og:description" content="11 interaction patterns where motion is purposeful but invisible, and the interface simply feels alive.">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Outfit:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect,useRef,useCallback,useMemo,memo} = React;
+
+/* ═══════════════════════════════════════════════════════════════
+   SLIDE DATA
+   ═══════════════════════════════════════════════════════════════ */
+const INTERACTIONS = [
+  {
+    num: "01", title: "Market Breathing",
+    principle: "The object knows what time it is",
+    brief: "Card borders pulse with a barely-visible glow during market hours, then go completely still after close.",
+    detail: "A 5-second sinusoidal shadow pulse at 3–4% opacity on the chart card. Uses ShadowContainer with animated BlurRadius (0↔6) and Opacity (0↔0.04). Gated by a DispatcherTimer checking market hours — the dashboard becomes time-aware.",
+    impl: ["ShadowContainer", "Storyboard · RepeatBehavior=Forever", "DispatcherTimer (1-min interval)"],
+    tone: "gain", viz: "breathing",
+  },
+  {
+    num: "02", title: "Chart Data Settle",
+    principle: "Confirm without congratulating",
+    brief: "The chart line overshoots by ~2–4% on Y when it finishes drawing, then springs back like an analog gauge needle.",
+    detail: "Three-phase keyframe sequence on CompositeTransform.ScaleY: snap to 1.04 (100ms), ease through 0.99 to 1.0 (600ms) with BackEase. Transform origin at bottom-center so the chart stretches upward. GPU-bound.",
+    impl: ["CompositeTransform.ScaleY", "DoubleAnimationUsingKeyFrames", "BackEase · EaseOut"],
+    tone: "gain", viz: "settle",
+  },
+  {
+    num: "03", title: "Ink Spread",
+    principle: "The hand knows before the eye",
+    brief: "Timeframe button fill radiates outward from the exact click point instead of appearing uniformly.",
+    detail: "On PointerPressed, an Ellipse spawns at click coordinates inside a Canvas overlay. Scale 0→3 over 300ms with CubicEase, Opacity 1→0 over 400ms. Fully GPU-bound — Scale + Opacity on RenderTransform.",
+    impl: ["PointerPressed · GetPosition()", "Canvas overlay · ClipToBounds", "ScaleTransform + Opacity Storyboard"],
+    tone: "accent", viz: "ink",
+  },
+  {
+    num: "04", title: "Weight Whisper",
+    principle: "Reduce, then reduce again",
+    brief: "Hovering a holding subtly shifts the chart gradient density proportional to that stock's portfolio weight.",
+    detail: "PointerEntered on holdings feeds a HoveredWeight to the chart ViewModel. A code-driven spring (DispatcherTimer at 16ms) interpolates gradient alpha inside SKXamlCanvas.OnPaintSurface. AAPL at 24% → dense. JPM at 8% → faint.",
+    impl: ["SKXamlCanvas · OnPaintSurface", "SpringAnimator (custom)", "PointerEntered/Exited binding"],
+    tone: "accent", viz: "whisper",
+  },
+  {
+    num: "05", title: "Silence on Leave",
+    principle: "The absence teaches you what was there",
+    brief: "Card content dips to 92% opacity for 600ms when the cursor exits, as if the chart exhales when you stop looking.",
+    detail: "PointerExited fires a sequenced DoubleAnimationUsingKeyFrames on an inner Grid's Opacity: hold at 1.0 for 200ms, dip to 0.92, recover to 1.0 over 400ms. GPU-bound — Opacity is always hardware-accelerated.",
+    impl: ["Opacity · DoubleAnimationUsingKeyFrames", "PointerExited → 200ms delay", "CubicEase · EaseInOut"],
+    tone: "subtle", viz: "silence",
+  },
+  {
+    num: "06", title: "Empty State Gravity",
+    principle: "The absence teaches you what was there",
+    brief: "When search returns no results, the container gains an inward shadow and the border desaturates — emptiness has physical weight.",
+    detail: "ShadowContainer with IsInner=True. VisualStateManager toggles between HasResults and Empty states. Shadow BlurRadius 0→16, Opacity 0→0.06, border color mutes. VisualTransition auto-generates the 500ms interpolation.",
+    impl: ["ShadowContainer · IsInner=True", "VisualStateManager + StateTrigger", "VisualTransition · 500ms"],
+    tone: "subtle", viz: "gravity",
+  },
+  {
+    num: "07", title: "Data-Driven Braille",
+    principle: "Reduce, then reduce again",
+    brief: "Braille indicators are tethered to actual percentage change — volatile stocks pulse fast, calm ones are nearly still.",
+    detail: "Intensity = min(1.0, |pct|/2 + 0.15). A shared DispatcherTimer at 60fps drives SKXamlCanvas draws per visible row. Each braille character's alpha and level maps to sin(frame × 0.2 × intensity + seed). Decoration becomes information.",
+    impl: ["SKXamlCanvas per row", "DispatcherTimer · 16ms shared", "intensity = f(|pctChange|)"],
+    tone: "gain", viz: "braille",
+  },
+  {
+    num: "08", title: "Tooltip Magnetism",
+    principle: "The hand knows before the eye",
+    brief: "The chart crosshair snaps to data points with acceleration and eases lazily between them — like a ratcheted dial.",
+    detail: "PointerMoved feeds raw X into a render loop. lerp(current, target, 0.7) when within 18px snap radius, lerp(..., 0.4) when free. All drawn inside SKXamlCanvas.OnPaintSurface — tooltip, crosshair, and glow ring in one Skia draw call.",
+    impl: ["SKXamlCanvas · PointerMoved", "Manual lerp interpolation", "Snap radius: 18px"],
+    tone: "accent", viz: "magnet",
+  },
+  {
+    num: "09", title: "Scroll Anticipation",
+    principle: "The hand knows before the eye",
+    brief: "Accent-colored edge bars appear at scroll boundaries — the list has edges you can feel.",
+    detail: "ScrollViewer.ViewChanged checks VerticalOffset against bounds. Four overlay Borders (edge bars + fade masks) toggle via VisualStateManager. All transitions are GPU-bound Opacity animations at 400ms.",
+    impl: ["ScrollViewer.ViewChanged", "VisualStateManager · 4 states", "Opacity overlays · GPU-bound"],
+    tone: "accent", viz: "scroll",
+  },
+  {
+    num: "10", title: "Weighted Paper",
+    principle: "One material, one gesture",
+    brief: "Hover lift uses spring physics — cards press down before rising, giving every motion a sense of mass.",
+    detail: "PointerEntered fires a DoubleAnimationUsingKeyFrames on CompositeTransform.TranslateY: 0→+3 (80ms press), +3→-6 (500ms lift with ElasticEase). PointerExited returns to 0 over 400ms. Shadow BlurRadius scales with Z for depth.",
+    impl: ["CompositeTransform.TranslateY", "ElasticEase · Oscillations=1", "ShadowContainer · animated depth"],
+    tone: "accent", viz: "paper",
+  },
+  {
+    num: "11", title: "Session Warmth",
+    principle: "The object knows what time it is",
+    brief: "Ambient orbs drift warmer in hue the longer you sit — a patina of use, capping at 25° after ~20 minutes.",
+    detail: "Composition API HueRotationEffect applied to the orb container's Visual (Skia backends). A DispatcherTimer at 10s intervals increments the angle: hueShift = min(elapsed × 0.02, 25°). Runs on compositor thread — zero UI cost.",
+    impl: ["HueRotationEffect · Composition API", "DispatcherTimer · 10s interval", "Cap: 25° hue rotation"],
+    tone: "gain", viz: "warmth",
+  },
+];
+
+/* Resolve tone → CSS variables at render time */
+function useTone(tone) {
+  return {
+    color: tone === "gain" ? "var(--gain)" : tone === "accent" ? "var(--accent)" : "var(--subtle)",
+    bg: tone === "gain" ? "var(--gain-bg)" : tone === "accent" ? "var(--accent-bg)" : "var(--surface-active)",
+  };
+}
+
+const PRINCIPLES = [
+  { name: "The object knows what time it is", ids: ["01", "11"], color: "var(--gain)" },
+  { name: "Confirm without congratulating", ids: ["02"], color: "var(--accent)" },
+  { name: "Reduce, then reduce again", ids: ["04", "07"], color: "var(--loss)" },
+  { name: "The absence teaches you what was there", ids: ["05", "06"], color: "var(--subtle)" },
+  { name: "The hand knows before the eye", ids: ["03", "08", "09"], color: "var(--accent)" },
+  { name: "One material, one gesture", ids: ["10"], color: "var(--accent-green)" },
+];
+
+const BRAILLE = "⠁⠃⠉⠙⠑⠋⠛⠓⠊⠚⠅⠇⠍⠝⠕⠏⠟⠗⠎⠞⠥⠧⠺⠭⠽⠵⣀⣄⣆⣇⣤⣦⣧⣴⣶⣷⣿";
+
+/* ═══════════════════════════════════════════════════════════════
+   MINI VISUALIZATIONS — one per interaction
+   ═══════════════════════════════════════════════════════════════ */
+const Viz = memo(function Viz({ type, accent }) {
+  const [f, setF] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setF(v => v + 1), 80);
+    return () => clearInterval(t);
+  }, []);
+
+  const w = 200, h = 80;
+
+  if (type === "breathing") {
+    const glow = Math.sin(f * 0.06) * 0.5 + 0.5;
+    return (
+      <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`}>
+        <rect x={10} y={10} width={w-20} height={h-20} rx={12} fill="none" stroke={accent} strokeWidth={1.5} opacity={0.2 + glow * 0.15} />
+        <rect x={10} y={10} width={w-20} height={h-20} rx={12} fill="none" stroke={accent} strokeWidth={1} opacity={glow * 0.3} filter="url(#glow)" />
+        <defs><filter id="glow"><feGaussianBlur stdDeviation={2 + glow * 4} /><feComposite in="SourceGraphic" /></filter></defs>
+        <line x1={30} y1={50} x2={170} y2={50} stroke="var(--subtle)" strokeWidth={0.5} strokeDasharray="3 6" opacity={0.3} />
+        {Array.from({length: 20}, (_, i) => {
+          const x = 30 + (i/19) * 140;
+          const y = 50 - (15 + Math.sin(i * 0.4 + f * 0.02) * 12);
+          return <circle key={i} cx={x} cy={y} r={1} fill={accent} opacity={0.4 + glow * 0.3} />;
+        })}
+      </svg>
+    );
+  }
+
+  if (type === "settle") {
+    const phase = (f % 60);
+    const scaleY = phase < 8 ? 1 : phase < 12 ? 1 + 0.04 * ((phase-8)/4) : phase < 30 ? 1.04 - 0.05 * ((phase-12)/18) : phase < 45 ? 0.99 + 0.01 * ((phase-30)/15) : 1;
+    return (
+      <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`}>
+        <g transform={`translate(0, ${(1 - scaleY) * h}) scale(1, ${scaleY})`} style={{ transformOrigin: `${w/2}px ${h}px` }}>
+          <path d={`M20,60 C50,20 80,45 110,25 C140,5 160,35 180,30`} fill="none" stroke={accent} strokeWidth={2} strokeLinecap="round" />
+          <path d={`M20,60 C50,20 80,45 110,25 C140,5 160,35 180,30 L180,70 L20,70 Z`} fill={accent} opacity={0.08} />
+        </g>
+        <text x={w/2} y={h - 4} textAnchor="middle" style={{ fontSize: 9, fontFamily: "var(--mono)", fill: "var(--subtle)" }}>
+          scaleY: {scaleY.toFixed(3)}
+        </text>
+      </svg>
+    );
+  }
+
+  if (type === "ink") {
+    const cycle = f % 50;
+    const scale = cycle < 30 ? Math.min(1, cycle / 15) : 1;
+    const opacity = cycle < 30 ? 1 - cycle / 30 : 0;
+    return (
+      <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`}>
+        <rect x={60} y={20} width={80} height={40} rx={8} fill="var(--surface-hover)" stroke="var(--border)" strokeWidth={1} />
+        <circle cx={90 + (f % 3) * 5} cy={40} r={30 * scale} fill={accent} opacity={opacity * 0.15} />
+        <text x={100} y={44} textAnchor="middle" style={{ fontSize: 11, fontFamily: "var(--sans)", fill: "var(--text)", fontWeight: 600 }}>3M</text>
+      </svg>
+    );
+  }
+
+  if (type === "whisper") {
+    const alpha = 0.08 + Math.sin(f * 0.04) * 0.12;
+    return (
+      <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`}>
+        <defs><linearGradient id="wg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={accent} stopOpacity={alpha} /><stop offset="100%" stopColor={accent} stopOpacity={0} /></linearGradient></defs>
+        <path d="M20,55 C50,20 80,40 110,25 C140,10 160,30 180,28 L180,70 L20,70Z" fill="url(#wg)" />
+        <path d="M20,55 C50,20 80,40 110,25 C140,10 160,30 180,28" fill="none" stroke={accent} strokeWidth={1.5} opacity={0.5 + alpha * 2} />
+        <text x={w/2} y={h - 2} textAnchor="middle" style={{ fontSize: 9, fontFamily: "var(--mono)", fill: "var(--subtle)" }}>α: {alpha.toFixed(2)}</text>
+      </svg>
+    );
+  }
+
+  if (type === "silence") {
+    const op = Math.sin(f * 0.05) > 0.3 ? 1 : 0.92;
+    return (
+      <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`}>
+        <rect x={10} y={8} width={w-20} height={h-16} rx={12} fill="var(--surface-hover)" stroke="var(--border)" strokeWidth={1} opacity={op} style={{ transition: "opacity 0.6s" }} />
+        <line x1={30} y1={35} x2={100} y2={35} stroke="var(--text)" strokeWidth={1.5} opacity={op * 0.5} strokeLinecap="round" />
+        <line x1={30} y1={48} x2={80} y2={48} stroke="var(--subtle)" strokeWidth={1} opacity={op * 0.3} strokeLinecap="round" />
+        <text x={w - 20} y={h/2 + 3} textAnchor="end" style={{ fontSize: 20, fontFamily: "var(--serif)", fill: "var(--text)", opacity: op }}>{(op * 100).toFixed(0)}%</text>
+      </svg>
+    );
+  }
+
+  if (type === "gravity") {
+    const show = f % 80 > 40;
+    return (
+      <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`}>
+        <rect x={10} y={8} width={w-20} height={h-16} rx={12} fill="var(--surface-hover)" stroke="var(--border)" strokeWidth={1} />
+        {show && <rect x={10} y={8} width={w-20} height={h-16} rx={12} fill="none" stroke="var(--surface-hover)" strokeWidth={1}>
+          <animate attributeName="filter" values="url(#inner);url(#inner)" dur="0.5s" />
+        </rect>}
+        {show ? (
+          <text x={w/2} y={h/2 + 4} textAnchor="middle" style={{ fontSize: 11, fontFamily: "var(--mono)", fill: "var(--subtle)", opacity: 0.4 }}>⣿⣶⣤⣀⠀⣀⣤⣶⣿</text>
+        ) : (
+          <>
+            {[0,1,2].map(i => <line key={i} x1={30} y1={24 + i * 16} x2={120 + i * 15} y2={24 + i * 16} stroke="var(--text)" strokeWidth={1} opacity={0.15} strokeLinecap="round" />)}
+          </>
+        )}
+      </svg>
+    );
+  }
+
+  if (type === "braille") {
+    const stocks = [{t:"TSLA",pct:1.84},{t:"JPM",pct:0.78},{t:"AAPL",pct:1.40}];
+    return (
+      <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`}>
+        {stocks.map((s, si) => {
+          const intensity = Math.min(1, s.pct / 2 + 0.15);
+          const y = 18 + si * 24;
+          return (
+            <g key={s.t}>
+              <text x={16} y={y} style={{ fontSize: 10, fontFamily: "var(--mono)", fill: "var(--text)", fontWeight: 600 }}>{s.t}</text>
+              {Array.from({length: 8}, (_, i) => {
+                const v = (Math.sin(f * 0.2 * intensity + i * 0.9 + si * 2) * 0.5 + 0.5) * intensity;
+                const lvl = Math.round(v * 6);
+                return <text key={i} x={56 + i * 11} y={y} style={{ fontSize: 11, fontFamily: "var(--mono)", fill: accent, opacity: 0.25 + v * 0.65 }}>{"⠀⣀⣤⣴⣶⣷⣿"[lvl]}</text>;
+              })}
+              <text x={w - 12} y={y} textAnchor="end" style={{ fontSize: 9, fontFamily: "var(--mono)", fill: accent, opacity: 0.6 }}>{intensity.toFixed(2)}</text>
+            </g>
+          );
+        })}
+      </svg>
+    );
+  }
+
+  if (type === "magnet") {
+    const pts = Array.from({length: 12}, (_, i) => ({ x: 20 + (i/11) * 160, y: 40 - Math.sin(i * 0.6) * 18 }));
+    const cursorIdx = Math.floor((f * 0.3) % 12);
+    return (
+      <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`}>
+        <path d={"M" + pts.map(p => `${p.x},${p.y}`).join(" L")} fill="none" stroke={accent} strokeWidth={1.5} opacity={0.5} />
+        {pts.map((p, i) => <circle key={i} cx={p.x} cy={p.y} r={i === cursorIdx ? 4 : 1.5} fill={i === cursorIdx ? "var(--card)" : accent} stroke={i === cursorIdx ? accent : "none"} strokeWidth={2} style={{ transition: "all 0.1s" }} />)}
+        <line x1={pts[cursorIdx].x} y1={8} x2={pts[cursorIdx].x} y2={65} stroke="var(--text)" strokeWidth={0.5} opacity={0.1} style={{ transition: "all 0.08s" }} />
+      </svg>
+    );
+  }
+
+  if (type === "scroll") {
+    const pos = (Math.sin(f * 0.03) + 1) / 2;
+    const atTop = pos < 0.05, atBot = pos > 0.95;
+    return (
+      <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`}>
+        <rect x={60} y={8} width={80} height={h-16} rx={10} fill="var(--surface-hover)" stroke="var(--border)" strokeWidth={1} />
+        <rect x={60} y={8} width={80} height={3} rx={1} fill={accent} opacity={atTop ? 0.3 : 0} style={{ transition: "opacity 0.4s" }} />
+        <rect x={60} y={h-11} width={80} height={3} rx={1} fill={accent} opacity={atBot ? 0.3 : 0} style={{ transition: "opacity 0.4s" }} />
+        <rect x={136} y={12 + pos * (h-34)} width={3} height={10} rx={1.5} fill="var(--subtle)" opacity={0.4} />
+        {[0,1,2,3,4].map(i => <line key={i} x1={70} y1={18 + i * 10} x2={120} y2={18 + i * 10} stroke="var(--text)" strokeWidth={0.8} opacity={0.08} />)}
+      </svg>
+    );
+  }
+
+  if (type === "paper") {
+    const cycle = f % 50;
+    const ty = cycle < 8 ? (cycle/8) * 3 : cycle < 30 ? 3 - ((cycle-8)/22) * 9 : cycle < 45 ? -6 + ((cycle-30)/15) * 6 : 0;
+    return (
+      <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`}>
+        <g transform={`translate(0, ${ty})`} style={{ transition: "transform 0.08s" }}>
+          <rect x={40} y={15} width={120} height={50} rx={12} fill="var(--surface-hover)" stroke="var(--border)" strokeWidth={1} />
+          <text x={100} y={38} textAnchor="middle" style={{ fontSize: 13, fontFamily: "var(--sans)", fill: "var(--text)", fontWeight: 600 }}>AAPL</text>
+          <text x={100} y={53} textAnchor="middle" style={{ fontSize: 10, fontFamily: "var(--mono)", fill: accent }}>$21,048</text>
+        </g>
+        <text x={w/2} y={h - 2} textAnchor="middle" style={{ fontSize: 9, fontFamily: "var(--mono)", fill: "var(--subtle)" }}>translateY: {ty.toFixed(1)}</text>
+      </svg>
+    );
+  }
+
+  if (type === "warmth") {
+    const hue = Math.min((f % 200) * 0.15, 25);
+    return (
+      <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`}>
+        <defs>
+          <radialGradient id="orb1"><stop offset="0%" stopColor={`hsl(${150 + hue}, 60%, 40%)`} stopOpacity={0.15} /><stop offset="100%" stopColor={`hsl(${150 + hue}, 60%, 40%)`} stopOpacity={0} /></radialGradient>
+          <radialGradient id="orb2"><stop offset="0%" stopColor={`hsl(${40 + hue}, 60%, 55%)`} stopOpacity={0.12} /><stop offset="100%" stopColor={`hsl(${40 + hue}, 60%, 55%)`} stopOpacity={0} /></radialGradient>
+        </defs>
+        <circle cx={60} cy={35} r={35} fill="url(#orb1)" />
+        <circle cx={140} cy={45} r={30} fill="url(#orb2)" />
+        <text x={w/2} y={h - 2} textAnchor="middle" style={{ fontSize: 9, fontFamily: "var(--mono)", fill: "var(--subtle)" }}>hue-rotate: {hue.toFixed(1)}°</text>
+      </svg>
+    );
+  }
+
+  return null;
+});
+
+
+/* ═══════════════════════════════════════════════════════════════
+   BRAILLE TEXTURE BAR — decorative divider
+   ═══════════════════════════════════════════════════════════════ */
+function BrailleBar({ width = 30, color = "var(--accent)", opacity = 0.2 }) {
+  const [f, setF] = useState(0);
+  useEffect(() => { const t = setInterval(() => setF(v => v + 1), 200); return () => clearInterval(t); }, []);
+  const chars = Array.from({ length: width }, (_, i) => {
+    const v = (Math.sin(f * 0.15 + i * 0.5) * 0.5 + 0.5);
+    return "⠀⣀⣤⣴⣶⣷⣿"[Math.round(v * 6)];
+  }).join("");
+  return <div style={{ fontFamily: "var(--mono)", fontSize: 10, color, opacity, userSelect: "none", letterSpacing: "-0.02em", overflow: "hidden", whiteSpace: "nowrap" }}>{chars}</div>;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   SLIDE COMPONENTS
+   ═══════════════════════════════════════════════════════════════ */
+function TitleSlide() {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", height: "100%", textAlign: "center", gap: 20 }}>
+      <div style={{ fontFamily: "var(--mono)", fontSize: 10, color: "var(--accent)", letterSpacing: "0.2em", textTransform: "uppercase", opacity: 0.6 }}>Meridian Capital Terminal · Design System</div>
+      <h1 style={{ fontFamily: "var(--serif)", fontSize: 42, fontWeight: 400, fontStyle: "italic", letterSpacing: "-0.03em", lineHeight: 1.1, maxWidth: 500 }}>
+        Designing Without Thought
+      </h1>
+      <p style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.7, maxWidth: 420 }}>
+        11 interaction patterns inspired by Naoto Fukasawa's philosophy — where motion is purposeful but invisible, and the interface simply feels alive.
+      </p>
+      <BrailleBar width={40} />
+      <div style={{ fontFamily: "var(--mono)", fontSize: 10, color: "var(--subtle)", letterSpacing: "0.1em" }}>
+        C# · WinUI 3 · XAML · UNO PLATFORM
+      </div>
+    </div>
+  );
+}
+
+function PhilosophySlide() {
+  const quotes = [
+    { text: "Design dissolving in behavior", sub: "The best interaction is one the user never notices" },
+    { text: "Without thought", sub: "Actions feel instinctive — the interface anticipates" },
+    { text: "The outline of things", sub: "Every animation must serve the data, not decorate it" },
+  ];
+  return (
+    <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", height: "100%", gap: 32 }}>
+      <div>
+        <div style={{ fontFamily: "var(--mono)", fontSize: 10, color: "var(--accent)", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 10 }}>Philosophy</div>
+        <h2 style={{ fontFamily: "var(--serif)", fontSize: 28, fontWeight: 400, fontStyle: "italic", letterSpacing: "-0.02em", lineHeight: 1.2 }}>
+          The object should feel alive<br />and aware of its own content
+        </h2>
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        {quotes.map((q, i) => (
+          <div key={i} style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
+            <div style={{ width: 3, height: 36, borderRadius: 2, background: "var(--accent)", opacity: 0.3, flexShrink: 0, marginTop: 2 }} />
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 500, lineHeight: 1.4 }}>{q.text}</div>
+              <div style={{ fontSize: 12, color: "var(--subtle)", marginTop: 2 }}>{q.sub}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <BrailleBar width={35} color="var(--subtle)" opacity={0.15} />
+      <p style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.6, maxWidth: 440 }}>
+        The GPU constraint defines the palette: Uno hardware-accelerates only <span style={{ fontFamily: "var(--mono)", color: "var(--accent)", fontSize: 11 }}>Opacity</span> and <span style={{ fontFamily: "var(--mono)", color: "var(--accent)", fontSize: 11 }}>RenderTransform</span>. Every interaction is designed within this boundary.
+      </p>
+    </div>
+  );
+}
+
+function ArchSlide() {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", height: "100%", gap: 20 }}>
+      <div>
+        <div style={{ fontFamily: "var(--mono)", fontSize: 10, color: "var(--accent)", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 10 }}>Architecture</div>
+        <h2 style={{ fontFamily: "var(--serif)", fontSize: 24, fontWeight: 400, fontStyle: "italic", letterSpacing: "-0.02em" }}>Six principles, eleven interactions</h2>
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {PRINCIPLES.map((p, i) => (
+          <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 14px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--surface-hover)" }}>
+            <div style={{ width: 8, height: 8, borderRadius: 3, background: p.color, flexShrink: 0 }} />
+            <div style={{ flex: 1, fontSize: 12, fontWeight: 500 }}>{p.name}</div>
+            <div style={{ display: "flex", gap: 4 }}>
+              {p.ids.map(id => (
+                <span key={id} style={{ fontFamily: "var(--mono)", fontSize: 10, fontWeight: 600, padding: "2px 7px", borderRadius: 5, background: "var(--surface-active)", color: p.color }}>{id}</span>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 4 }}>
+        {["Storyboard", "CompositeTransform", "ShadowContainer", "SKXamlCanvas", "VisualStateManager", "HueRotationEffect", "SpringAnimator"].map(t => (
+          <span key={t} style={{ fontFamily: "var(--mono)", fontSize: 9, padding: "3px 8px", borderRadius: 5, border: "1px solid var(--border)", color: "var(--subtle)" }}>{t}</span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function InteractionSlide({ data }) {
+  const tone = useTone(data.tone);
+  return (
+    <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", height: "100%", gap: 16 }}>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
+        <span style={{ fontFamily: "var(--mono)", fontSize: 32, fontWeight: 400, color: tone.color, opacity: 0.25, letterSpacing: "-0.04em" }}>{data.num}</span>
+        <div>
+          <h2 style={{ fontFamily: "var(--serif)", fontSize: 24, fontWeight: 400, fontStyle: "italic", letterSpacing: "-0.02em" }}>{data.title}</h2>
+          <div style={{ fontFamily: "var(--mono)", fontSize: 10, color: tone.color, opacity: 0.5, marginTop: 2, letterSpacing: "0.06em" }}>{data.principle}</div>
+        </div>
+      </div>
+
+      {/* Brief */}
+      <p style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.6 }}>{data.brief}</p>
+
+      {/* Viz */}
+      <div style={{ padding: "12px 0", display: "flex", justifyContent: "center" }}>
+        <div style={{ padding: "12px 16px", borderRadius: 12, border: "1px solid var(--border)", background: "var(--surface-hover)" }}>
+          <Viz type={data.viz} accent={tone.color} />
+        </div>
+      </div>
+
+      {/* Detail */}
+      <p style={{ fontSize: 11, color: "var(--subtle)", lineHeight: 1.65 }}>{data.detail}</p>
+
+      {/* Impl tags */}
+      <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+        {data.impl.map(tag => (
+          <span key={tag} style={{
+            fontFamily: "var(--mono)", fontSize: 9, padding: "3px 9px", borderRadius: 6,
+            border: "1px solid var(--border)", background: tone.bg, color: tone.color,
+            letterSpacing: "0.02em",
+          }}>{tag}</span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TakeawaySlide() {
+  const priorities = [
+    { num: "07", name: "Data-Driven Braille", note: "Decoration → information" },
+    { num: "01", name: "Market Breathing", note: "Time-awareness, zero UI" },
+    { num: "05", name: "Silence on Leave", note: "One storyboard, max subtlety" },
+    { num: "10", name: "Weighted Paper", note: "Unified motion vocabulary" },
+    { num: "02", name: "Chart Data Settle", note: "Analog gauge satisfaction" },
+  ];
+  return (
+    <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", height: "100%", gap: 24 }}>
+      <div>
+        <div style={{ fontFamily: "var(--mono)", fontSize: 10, color: "var(--accent)", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 10 }}>Takeaway</div>
+        <h2 style={{ fontFamily: "var(--serif)", fontSize: 26, fontWeight: 400, fontStyle: "italic", letterSpacing: "-0.02em", lineHeight: 1.2 }}>
+          Ship the invisible ones first
+        </h2>
+      </div>
+      <p style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.6, maxWidth: 440 }}>
+        The interactions that add the most life are the ones users never consciously notice. Start with what makes the dashboard <em>feel</em> different, not <em>look</em> different.
+      </p>
+      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        {priorities.map((p, i) => (
+          <div key={p.num} style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 14px", borderRadius: 10, border: "1px solid var(--border)", background: i === 0 ? "var(--accent-bg)" : "var(--surface-hover)" }}>
+            <span style={{ fontFamily: "var(--mono)", fontSize: 11, fontWeight: 600, color: "var(--accent)", minWidth: 18 }}>P{i+1}</span>
+            <span style={{ fontFamily: "var(--mono)", fontSize: 10, color: "var(--subtle)", minWidth: 22 }}>{p.num}</span>
+            <span style={{ fontSize: 12, fontWeight: 500, flex: 1 }}>{p.name}</span>
+            <span style={{ fontSize: 10, color: "var(--subtle)", fontFamily: "var(--mono)" }}>{p.note}</span>
+          </div>
+        ))}
+      </div>
+      <BrailleBar width={40} />
+      <div style={{ textAlign: "center" }}>
+        <div style={{ fontFamily: "var(--serif)", fontSize: 16, fontStyle: "italic", opacity: 0.6 }}>Design dissolves in behavior.</div>
+        <div style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--subtle)", marginTop: 8, letterSpacing: "0.12em", textTransform: "uppercase" }}>Meridian Terminal v4.1 · Uno Platform</div>
+      </div>
+    </div>
+  );
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   CAROUSEL ROOT
+   ═══════════════════════════════════════════════════════════════ */
+export default function Carousel() {
+  const TOTAL = 3 + INTERACTIONS.length + 1; // title + philosophy + arch + 11 interactions + takeaway
+  const [slide, setSlide] = useState(0);
+  const [dir, setDir] = useState(0);
+
+  const go = useCallback((n) => {
+    if (n < 0 || n >= TOTAL) return;
+    setDir(n > slide ? 1 : -1);
+    setSlide(n);
+  }, [slide, TOTAL]);
+
+  useEffect(() => {
+    const handleKey = (e) => {
+      if (e.key === "ArrowRight" || e.key === " ") { e.preventDefault(); go(slide + 1); }
+      if (e.key === "ArrowLeft") { e.preventDefault(); go(slide - 1); }
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [slide, go]);
+
+  const renderSlide = () => {
+    if (slide === 0) return <TitleSlide />;
+    if (slide === 1) return <PhilosophySlide />;
+    if (slide === 2) return <ArchSlide />;
+    if (slide >= 3 && slide < 3 + INTERACTIONS.length) return <InteractionSlide data={INTERACTIONS[slide - 3]} />;
+    return <TakeawaySlide />;
+  };
+
+  // Slide label
+  const label = slide === 0 ? "Title" : slide === 1 ? "Philosophy" : slide === 2 ? "Architecture" : slide < 3 + INTERACTIONS.length ? `${INTERACTIONS[slide-3].num} · ${INTERACTIONS[slide-3].title}` : "Takeaway";
+
+  return (
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Outfit:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+        :root {
+          --bg: #f6f4f0; --card: #ffffff; --text: #1a1a2e; --muted: #6b6b6b; --subtle: #8a8578;
+          --border: #e8e4de; --gain: #2d6a4f; --loss: #b5342b; --accent: #c9a96e; --accent-green: #2d6a4f;
+          --surface-hover: #f8f6f2; --surface-active: #f0ece6; --backdrop: rgba(26,26,46,0.25);
+          --gain-bg: rgba(45,106,79,0.08); --loss-bg: rgba(181,52,43,0.08); --accent-bg: rgba(201,169,110,0.06);
+          --focus-ring: rgba(201,169,110,0.4);
+          --serif: 'Instrument Serif', Georgia, serif; --sans: 'Outfit', system-ui, sans-serif; --mono: 'IBM Plex Mono', monospace;
+        }
+        @media (prefers-color-scheme: dark) {
+          :root {
+            --bg: #141420; --card: #1e1e2e; --text: #e8e4de; --muted: #9a9a9a; --subtle: #7a7770;
+            --border: #2e2e42; --gain: #4ade80; --loss: #f87171; --accent: #d4b87a; --accent-green: #4ade80;
+            --surface-hover: #252538; --surface-active: #2a2a40; --backdrop: rgba(0,0,0,0.5);
+            --gain-bg: rgba(74,222,128,0.1); --loss-bg: rgba(248,113,113,0.1); --accent-bg: rgba(212,184,122,0.08);
+            --focus-ring: rgba(212,184,122,0.4);
+          }
+        }
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes slideInLeft { from { opacity: 0; transform: translateX(-24px); } to { opacity: 1; transform: translateX(0); } }
+      `}</style>
+
+      <div style={{
+        minHeight: "100vh", background: "var(--bg)", fontFamily: "var(--sans)", color: "var(--text)",
+        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+        padding: 20,
+      }}>
+        {/* Card frame */}
+        <div style={{
+          width: "100%", maxWidth: 540, minHeight: 620, borderRadius: 20,
+          border: "1px solid var(--border)", background: "var(--card)",
+          display: "flex", flexDirection: "column", overflow: "hidden",
+          boxShadow: "0 24px 80px rgba(0,0,0,0.4)",
+        }}>
+          {/* Top bar */}
+          <div style={{
+            padding: "14px 24px", borderBottom: "1px solid var(--border)",
+            display: "flex", justifyContent: "space-between", alignItems: "center",
+          }}>
+            <div style={{ fontFamily: "var(--serif)", fontSize: 14, fontStyle: "italic", letterSpacing: "-0.02em", opacity: 0.5 }}>Meridian</div>
+            <div style={{ fontFamily: "var(--mono)", fontSize: 10, color: "var(--subtle)", letterSpacing: "0.08em" }}>
+              {String(slide + 1).padStart(2, "0")} / {String(TOTAL).padStart(2, "0")}
+            </div>
+          </div>
+
+          {/* Slide content */}
+          <div style={{ flex: 1, padding: "24px 32px", overflow: "auto" }}
+            key={slide}
+          >
+            <div style={{ animation: `${dir >= 0 ? "slideIn" : "slideInLeft"} 0.35s ease both`, height: "100%" }}>
+              {renderSlide()}
+            </div>
+          </div>
+
+          {/* Bottom nav */}
+          <div style={{
+            padding: "14px 24px", borderTop: "1px solid var(--border)",
+            display: "flex", justifyContent: "space-between", alignItems: "center",
+          }}>
+            <button onClick={() => go(slide - 1)} disabled={slide === 0}
+              style={{
+                width: 36, height: 36, borderRadius: 8, border: "1px solid var(--border)",
+                background: "transparent", cursor: slide > 0 ? "pointer" : "default",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                color: slide > 0 ? "var(--text)" : "var(--border)", fontSize: 16,
+                transition: "all 0.2s",
+              }}>←</button>
+
+            {/* Dot indicators */}
+            <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+              {Array.from({ length: TOTAL }, (_, i) => {
+                const isActive = i === slide;
+                const isInteraction = i >= 3 && i < TOTAL - 1;
+                return (
+                  <button key={i} onClick={() => go(i)}
+                    style={{
+                      width: isActive ? 20 : 6, height: 6, borderRadius: 3,
+                      background: isActive ? "var(--accent)" : isInteraction ? "var(--border)" : "var(--subtle)",
+                      opacity: isActive ? 1 : isInteraction ? 0.4 : 0.25,
+                      border: "none", cursor: "pointer", padding: 0,
+                      transition: "all 0.3s cubic-bezier(0.22, 1, 0.36, 1)",
+                    }} />
+                );
+              })}
+            </div>
+
+            <button onClick={() => go(slide + 1)} disabled={slide === TOTAL - 1}
+              style={{
+                width: 36, height: 36, borderRadius: 8, border: "1px solid var(--border)",
+                background: "transparent", cursor: slide < TOTAL - 1 ? "pointer" : "default",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                color: slide < TOTAL - 1 ? "var(--text)" : "var(--border)", fontSize: 16,
+                transition: "all 0.2s",
+              }}>→</button>
+          </div>
+        </div>
+
+        {/* Footer label */}
+        <div style={{ marginTop: 16, fontFamily: "var(--mono)", fontSize: 10, color: "var(--subtle)", letterSpacing: "0.06em", textAlign: "center" }}>
+          {label} · ← → to navigate
+        </div>
+      </div>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(Carousel));
+</script>
+</body>
+</html>
