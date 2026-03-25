@@ -1,0 +1,2655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Designing Without Thought — 11 Interaction Patterns</title>
+
+    <!-- Fonts: Instrument Serif, Outfit, IBM Plex Mono -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Outfit:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+    <style>
+        /* ===========================================
+           CSS CUSTOM PROPERTIES — MERIDIAN DESIGN SYSTEM
+           =========================================== */
+        :root {
+            /* Colors */
+            --bg: #f6f4f0;
+            --card: #ffffff;
+            --text: #1a1a2e;
+            --muted: #8a8a8a;
+            --subtle: #c4c0b8;
+            --border: #e8e4de;
+            --gain: #2d6a4f;
+            --loss: #b5342b;
+            --accent: #c9a96e;
+            --gain-light: rgba(45, 106, 79, 0.08);
+            --gain-glow: rgba(45, 106, 79, 0.15);
+
+            /* Typography */
+            --serif: 'Instrument Serif', Georgia, serif;
+            --sans: 'Outfit', system-ui, sans-serif;
+            --mono: 'IBM Plex Mono', monospace;
+
+            /* Sizing for 1080x1080 square carousel */
+            --slide-size: min(100vw, 100vh);
+
+            /* Animation */
+            --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+            --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+            --ease-back: cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        }
+
+        /* ===========================================
+           RESET & BASE
+           =========================================== */
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html {
+            height: 100%;
+            overflow-x: hidden;
+            scroll-snap-type: y mandatory;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            height: 100%;
+            background: #e8e4de;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: var(--sans);
+        }
+
+        /* ===========================================
+           SLIDE BASE — Square 1080x1080 format
+           =========================================== */
+        .slide {
+            width: var(--slide-size);
+            height: var(--slide-size);
+            min-height: var(--slide-size);
+            background: var(--bg);
+            position: relative;
+            overflow: hidden;
+            scroll-snap-align: start;
+            flex-shrink: 0;
+        }
+
+        .slide.dark {
+            background: var(--text);
+        }
+
+        /* Grain texture overlay */
+        .slide::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 50;
+            opacity: 0.12;
+            background: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E");
+        }
+
+        .slide.dark::before { opacity: 0.06; }
+
+        /* Green top accent bar */
+        .slide::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: var(--gain);
+            z-index: 60;
+        }
+
+        .slide.dark::after {
+            background: var(--accent);
+        }
+
+        /* ===========================================
+           CORNER BRACKETS
+           =========================================== */
+        .bracket-tl, .bracket-br {
+            position: absolute;
+            width: 14px;
+            height: 18px;
+            z-index: 30;
+        }
+
+        .bracket-tl {
+            top: 44px; left: 52px;
+            border-left: 2px solid var(--gain);
+            border-top: 2px solid var(--gain);
+        }
+
+        .bracket-br {
+            bottom: 44px; right: 52px;
+            border-right: 2px solid var(--accent);
+            border-bottom: 2px solid var(--accent);
+        }
+
+        .dark .bracket-tl {
+            border-color: rgba(246, 244, 240, 0.3);
+        }
+
+        .dark .bracket-br {
+            border-color: var(--accent);
+        }
+
+        /* ===========================================
+           SLIDE NUMBERING
+           =========================================== */
+        .slide-num {
+            position: absolute;
+            top: 50px;
+            right: 64px;
+            font-family: var(--mono);
+            font-size: 13px;
+            color: var(--muted);
+            z-index: 30;
+            letter-spacing: 0.02em;
+        }
+
+        .slide-num .total { opacity: 0.4; }
+
+        .dark .slide-num { color: rgba(246, 244, 240, 0.4); }
+
+        /* ===========================================
+           FOOTER
+           =========================================== */
+        .slide-footer {
+            position: absolute;
+            bottom: 46px;
+            left: 64px;
+            right: 64px;
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            z-index: 30;
+        }
+
+        .slide-footer .brand {
+            font-family: var(--serif);
+            font-style: italic;
+            font-size: 16px;
+            color: var(--text);
+            opacity: 0.25;
+        }
+
+        .slide-footer .tagline {
+            font-family: var(--mono);
+            font-size: 9px;
+            color: var(--muted);
+            letter-spacing: 0.1em;
+            opacity: 0.45;
+            text-transform: uppercase;
+        }
+
+        .dark .slide-footer .brand { color: var(--bg); opacity: 0.2; }
+        .dark .slide-footer .tagline { color: rgba(246, 244, 240, 0.25); }
+
+        /* ===========================================
+           TYPOGRAPHY
+           =========================================== */
+        .label {
+            font-family: var(--mono);
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--gain);
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .label::before {
+            content: '';
+            width: 18px;
+            height: 1.5px;
+            background: var(--gain);
+            display: inline-block;
+        }
+
+        .dark .label { color: var(--accent); }
+        .dark .label::before { background: var(--accent); }
+
+        .pattern-num {
+            font-family: var(--mono);
+            font-size: 64px;
+            font-weight: 600;
+            color: var(--gain);
+            opacity: 0.08;
+            position: absolute;
+            top: 36px;
+            left: 56px;
+            z-index: 5;
+            line-height: 1;
+        }
+
+        .pattern-title {
+            font-family: var(--serif);
+            font-size: 42px;
+            color: var(--text);
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+        }
+
+        .pattern-principle {
+            font-family: var(--serif);
+            font-style: italic;
+            font-size: 16px;
+            color: var(--accent);
+            margin-top: 6px;
+        }
+
+        .pattern-desc {
+            font-family: var(--sans);
+            font-size: 15px;
+            color: var(--muted);
+            line-height: 1.55;
+            max-width: 520px;
+        }
+
+        .pattern-quote {
+            font-family: var(--serif);
+            font-style: italic;
+            font-size: 14px;
+            color: var(--text);
+            opacity: 0.6;
+            border-left: 2px solid var(--accent);
+            padding-left: 14px;
+            margin-top: 8px;
+        }
+
+        /* ===========================================
+           SPEC PILLS
+           =========================================== */
+        .specs {
+            position: absolute;
+            bottom: 100px;
+            left: 64px;
+            right: 64px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            z-index: 20;
+        }
+
+        .spec {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 6px 14px;
+        }
+
+        .spec .spec-label {
+            font-family: var(--mono);
+            font-size: 9px;
+            color: var(--muted);
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        .spec .spec-value {
+            font-family: var(--mono);
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--gain);
+        }
+
+        /* ===========================================
+           REVEAL ANIMATIONS
+           =========================================== */
+        .reveal {
+            opacity: 0;
+            transform: translateY(24px);
+            transition: opacity 0.7s var(--ease-out-expo),
+                        transform 0.7s var(--ease-out-expo);
+        }
+
+        .slide.visible .reveal {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .reveal:nth-child(1) { transition-delay: 0.05s; }
+        .reveal:nth-child(2) { transition-delay: 0.12s; }
+        .reveal:nth-child(3) { transition-delay: 0.2s; }
+        .reveal:nth-child(4) { transition-delay: 0.3s; }
+        .reveal:nth-child(5) { transition-delay: 0.4s; }
+
+        /* ===========================================
+           NAVIGATION
+           =========================================== */
+        .nav-bar {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 1000;
+            background: rgba(26, 26, 46, 0.85);
+            backdrop-filter: blur(12px);
+            padding: 8px 16px;
+            border-radius: 100px;
+        }
+
+        .nav-bar button {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: 1px solid rgba(246, 244, 240, 0.15);
+            background: transparent;
+            color: var(--bg);
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .nav-bar button:hover { background: rgba(246, 244, 240, 0.1); }
+        .nav-bar button:disabled { opacity: 0.2; cursor: default; }
+
+        .nav-bar .counter {
+            font-family: var(--mono);
+            font-size: 12px;
+            color: rgba(246, 244, 240, 0.6);
+            min-width: 50px;
+            text-align: center;
+        }
+
+        .nav-dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .nav-dots .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(246, 244, 240, 0.2);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            padding: 0;
+        }
+
+        .nav-dots .dot.active {
+            width: 20px;
+            background: var(--gain);
+        }
+
+        /* ===========================================
+           PRINT / PDF EXPORT — 1080x1080
+           =========================================== */
+        @media print {
+            html, body { height: auto; overflow: visible; }
+            .nav-bar { display: none !important; }
+            .slide {
+                width: 1080px !important;
+                height: 1080px !important;
+                min-height: 1080px !important;
+                page-break-after: always;
+                break-after: page;
+            }
+            .slide .reveal { opacity: 1 !important; transform: none !important; }
+            @page { size: 1080px 1080px; margin: 0; }
+        }
+
+        /* ===========================================
+           REDUCED MOTION
+           =========================================== */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.2s !important;
+            }
+            html { scroll-behavior: auto; }
+        }
+
+        /* ===========================================
+           SLIDE 01: COVER
+           =========================================== */
+        .cover-content {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 0 80px;
+            z-index: 10;
+        }
+
+        .cover-title {
+            font-family: var(--serif);
+            font-size: 72px;
+            color: var(--text);
+            line-height: 1.05;
+            letter-spacing: -0.03em;
+        }
+
+        .cover-title em {
+            color: var(--gain);
+            font-style: italic;
+        }
+
+        .cover-sub {
+            font-family: var(--sans);
+            font-size: 17px;
+            color: var(--muted);
+            line-height: 1.55;
+            max-width: 560px;
+            margin-top: 20px;
+        }
+
+        .tech-pills {
+            display: flex;
+            gap: 8px;
+            margin-top: 28px;
+        }
+
+        .tech-pill {
+            font-family: var(--mono);
+            font-size: 10px;
+            color: var(--muted);
+            padding: 5px 14px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            letter-spacing: 0.02em;
+        }
+
+        /* Ambient floating orbs on cover */
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.15;
+            z-index: 1;
+        }
+
+        .orb-1 {
+            width: 400px; height: 400px;
+            background: var(--gain);
+            top: -100px; right: -80px;
+            animation: orbFloat1 12s ease-in-out infinite;
+        }
+
+        .orb-2 {
+            width: 300px; height: 300px;
+            background: var(--accent);
+            bottom: -50px; left: -60px;
+            animation: orbFloat2 15s ease-in-out infinite;
+        }
+
+        @keyframes orbFloat1 {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(-30px, 20px); }
+        }
+
+        @keyframes orbFloat2 {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(20px, -15px); }
+        }
+
+        /* ===========================================
+           SLIDE 02: THESIS
+           =========================================== */
+        .thesis-content {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 0 80px;
+            z-index: 10;
+        }
+
+        .thesis-quote {
+            font-family: var(--serif);
+            font-size: 38px;
+            color: var(--text);
+            line-height: 1.2;
+            letter-spacing: -0.02em;
+            max-width: 760px;
+        }
+
+        .thesis-quote em {
+            color: var(--gain);
+            font-style: italic;
+        }
+
+        .thesis-body {
+            font-family: var(--sans);
+            font-size: 16px;
+            color: var(--muted);
+            line-height: 1.6;
+            max-width: 620px;
+            margin-top: 28px;
+        }
+
+        .thesis-callout {
+            font-family: var(--mono);
+            font-size: 13px;
+            color: var(--gain);
+            background: var(--gain-light);
+            padding: 14px 22px;
+            border-radius: 10px;
+            margin-top: 28px;
+            display: inline-block;
+            max-width: 620px;
+            line-height: 1.5;
+        }
+
+        /* ===========================================
+           SLIDE 03: PRINCIPLES MAP
+           =========================================== */
+        .principles-content {
+            position: absolute;
+            top: 110px;
+            left: 64px;
+            right: 64px;
+            z-index: 10;
+        }
+
+        .principles-title {
+            font-family: var(--serif);
+            font-size: 42px;
+            color: var(--text);
+            line-height: 1.1;
+            margin-bottom: 32px;
+        }
+
+        .principle-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 20px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            margin-bottom: 8px;
+        }
+
+        .principle-row .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 14px;
+            flex-shrink: 0;
+        }
+
+        .principle-row .principle-text {
+            font-family: var(--serif);
+            font-style: italic;
+            font-size: 16px;
+            color: var(--text);
+            flex: 1;
+        }
+
+        .principle-row .nums {
+            display: flex;
+            gap: 4px;
+        }
+
+        .principle-row .num-badge {
+            font-family: var(--mono);
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--card);
+            background: var(--gain);
+            padding: 3px 8px;
+            border-radius: 5px;
+            letter-spacing: 0.02em;
+        }
+
+        .num-badge.gold { background: var(--accent); }
+        .num-badge.muted-bg { background: var(--subtle); color: var(--text); }
+
+        .api-tags {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 24px;
+        }
+
+        .api-tag {
+            font-family: var(--mono);
+            font-size: 10px;
+            color: var(--subtle);
+            padding: 4px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+        }
+
+        /* ===========================================
+           PATTERN SLIDE LAYOUT
+           =========================================== */
+        .pattern-header {
+            position: absolute;
+            top: 50px;
+            left: 64px;
+            right: 120px;
+            z-index: 20;
+        }
+
+        .pattern-header .label { margin-bottom: 14px; }
+
+        .demo-area {
+            position: absolute;
+            z-index: 10;
+        }
+
+        /* ===========================================
+           DEMO: 01 Market Breathing
+           =========================================== */
+        .demo-breathing {
+            top: 280px; left: 80px; right: 80px;
+            height: 340px;
+        }
+
+        .breathing-card {
+            width: 100%;
+            height: 100%;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 28px;
+            position: relative;
+            animation: breathingShadow 5s ease-in-out infinite;
+        }
+
+        @keyframes breathingShadow {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(45, 106, 79, 0), 0 4px 20px rgba(0,0,0,0.04); }
+            50% { box-shadow: 0 0 24px 4px rgba(45, 106, 79, 0.06), 0 4px 20px rgba(0,0,0,0.04); }
+        }
+
+        .breathing-card .card-label {
+            font-family: var(--mono);
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--muted);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .breathing-card .card-ticker {
+            font-family: var(--serif);
+            font-size: 28px;
+            color: var(--text);
+            margin-top: 8px;
+        }
+
+        .breathing-card .card-price {
+            font-family: var(--mono);
+            font-size: 20px;
+            font-weight: 500;
+            color: var(--text);
+            margin-top: 4px;
+        }
+
+        .breathing-card .card-change {
+            font-family: var(--mono);
+            font-size: 14px;
+            color: var(--gain);
+            margin-top: 2px;
+        }
+
+        .breathing-chart {
+            position: absolute;
+            bottom: 24px;
+            left: 28px;
+            right: 28px;
+            height: 140px;
+        }
+
+        .breathing-status {
+            position: absolute;
+            top: 28px;
+            right: 28px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--gain);
+            animation: statusPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes statusPulse {
+            0%, 100% { opacity: 0.4; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.15); }
+        }
+
+        .status-text {
+            font-family: var(--mono);
+            font-size: 10px;
+            color: var(--gain);
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        /* ===========================================
+           DEMO: 02 Chart Data Settle
+           =========================================== */
+        .demo-settle {
+            top: 280px; left: 80px; right: 80px;
+            height: 340px;
+        }
+
+        .settle-card {
+            width: 100%;
+            height: 100%;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px 28px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .settle-chart-wrap {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 240px;
+            transform-origin: bottom center;
+        }
+
+        .settle-chart-wrap.animating {
+            animation: chartSettle 1.8s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+        }
+
+        @keyframes chartSettle {
+            0% { transform: scaleY(0.92); }
+            12% { transform: scaleY(1.04); }
+            40% { transform: scaleY(0.99); }
+            70% { transform: scaleY(1.0); }
+            100% { transform: scaleY(1.0); }
+        }
+
+        /* ===========================================
+           DEMO: 03 Ink Spread
+           =========================================== */
+        .demo-ink {
+            top: 310px; left: 80px; right: 80px;
+            height: 260px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .ink-btn {
+            position: relative;
+            overflow: hidden;
+            font-family: var(--mono);
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text);
+            padding: 14px 36px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--card);
+            cursor: default;
+        }
+
+        .ink-btn.active {
+            color: var(--gain);
+            border-color: var(--gain);
+            background: rgba(45, 106, 79, 0.05);
+        }
+
+        .ink-ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(45, 106, 79, 0.12);
+            transform: scale(0);
+            pointer-events: none;
+        }
+
+        .ink-ripple.go {
+            animation: inkSpread 0.7s ease-out forwards;
+        }
+
+        @keyframes inkSpread {
+            0% { transform: scale(0); opacity: 1; }
+            100% { transform: scale(3); opacity: 0; }
+        }
+
+        /* ===========================================
+           DEMO: 04 Weight Whisper
+           =========================================== */
+        .demo-whisper {
+            top: 270px; left: 64px; right: 64px;
+            height: 360px;
+        }
+
+        .whisper-layout {
+            display: flex;
+            gap: 20px;
+            height: 100%;
+        }
+
+        .whisper-chart {
+            flex: 2;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .whisper-gradient {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 70%;
+            transition: opacity 1.2s ease;
+        }
+
+        .whisper-holdings {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .whisper-holding {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px 16px;
+            cursor: default;
+            transition: border-color 0.3s ease;
+        }
+
+        .whisper-holding:hover {
+            border-color: var(--gain);
+        }
+
+        .whisper-holding .wh-ticker {
+            font-family: var(--mono);
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .whisper-holding .wh-weight {
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 2px;
+        }
+
+        .whisper-holding .wh-bar {
+            height: 3px;
+            border-radius: 2px;
+            background: var(--gain);
+            margin-top: 8px;
+            transition: opacity 0.3s ease;
+        }
+
+        /* ===========================================
+           DEMO: 05 Silence on Leave
+           =========================================== */
+        .demo-silence {
+            top: 300px; left: 80px; right: 80px;
+            height: 300px;
+            display: flex;
+            gap: 20px;
+        }
+
+        .silence-card {
+            flex: 1;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: default;
+        }
+
+        .silence-card.dim {
+            animation: silenceDim 1.2s ease;
+        }
+
+        @keyframes silenceDim {
+            0% { opacity: 1; }
+            30% { opacity: 0.92; }
+            100% { opacity: 1; }
+        }
+
+        /* ===========================================
+           DEMO: 06 Empty State Gravity
+           =========================================== */
+        .demo-gravity {
+            top: 290px; left: 80px; right: 80px;
+            height: 320px;
+        }
+
+        .gravity-container {
+            width: 100%;
+            height: 100%;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            transition: all 0.6s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .gravity-container.empty {
+            box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.06);
+            border-color: var(--subtle);
+        }
+
+        .gravity-container.empty .gravity-text {
+            opacity: 1;
+        }
+
+        .gravity-text {
+            font-family: var(--sans);
+            font-size: 15px;
+            color: var(--muted);
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            text-align: center;
+        }
+
+        .gravity-text .gravity-icon {
+            font-size: 36px;
+            margin-bottom: 12px;
+            opacity: 0.3;
+            display: block;
+        }
+
+        .gravity-search {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--bg);
+            border-radius: 10px;
+            padding: 10px 16px;
+        }
+
+        .gravity-search-icon {
+            font-size: 14px;
+            opacity: 0.3;
+        }
+
+        .gravity-search-text {
+            font-family: var(--mono);
+            font-size: 13px;
+            color: var(--text);
+        }
+
+        .gravity-cursor {
+            display: inline-block;
+            width: 2px;
+            height: 16px;
+            background: var(--gain);
+            animation: blink 1s infinite;
+            margin-left: 2px;
+            vertical-align: middle;
+        }
+
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+        /* ===========================================
+           DEMO: 07 Data-Driven Braille
+           =========================================== */
+        .demo-braille {
+            top: 270px; left: 64px; right: 64px;
+            height: 380px;
+        }
+
+        .braille-rows {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .braille-row {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px 20px;
+        }
+
+        .braille-ticker {
+            font-family: var(--mono);
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text);
+            width: 60px;
+        }
+
+        .braille-change {
+            font-family: var(--mono);
+            font-size: 13px;
+            width: 70px;
+        }
+
+        .braille-change.up { color: var(--gain); }
+        .braille-change.down { color: var(--loss); }
+
+        .braille-stream {
+            font-family: var(--mono);
+            font-size: 18px;
+            letter-spacing: -0.02em;
+            flex: 1;
+            overflow: hidden;
+            mask-image: linear-gradient(90deg, transparent, black 8%, black 92%, transparent);
+            -webkit-mask-image: linear-gradient(90deg, transparent, black 8%, black 92%, transparent);
+        }
+
+        .braille-intensity-label {
+            font-family: var(--mono);
+            font-size: 10px;
+            color: var(--muted);
+            text-align: right;
+            width: 60px;
+        }
+
+        /* ===========================================
+           DEMO: 08 Tooltip Magnetism
+           =========================================== */
+        .demo-magnet {
+            top: 280px; left: 80px; right: 80px;
+            height: 340px;
+        }
+
+        .magnet-chart {
+            width: 100%;
+            height: 100%;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            position: relative;
+            overflow: hidden;
+            cursor: crosshair;
+        }
+
+        .magnet-crosshair {
+            position: absolute;
+            top: 0;
+            width: 1px;
+            height: 100%;
+            background: var(--text);
+            opacity: 0.12;
+            transition: left 0.15s ease-out;
+            pointer-events: none;
+        }
+
+        .magnet-crosshair.snapped {
+            transition: left 0.06s ease-out;
+            opacity: 0.25;
+        }
+
+        .magnet-dot {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--bg);
+            border: 2.5px solid var(--gain);
+            transform: translate(-50%, -50%);
+            z-index: 5;
+        }
+
+        .magnet-snap-ring {
+            position: absolute;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 1px dashed var(--gain);
+            opacity: 0;
+            transform: translate(-50%, -50%);
+            transition: opacity 0.3s;
+            z-index: 4;
+        }
+
+        .magnet-snap-ring.show { opacity: 0.3; }
+
+        .magnet-tooltip {
+            position: absolute;
+            background: var(--text);
+            color: var(--bg);
+            font-family: var(--mono);
+            font-size: 12px;
+            padding: 6px 12px;
+            border-radius: 8px;
+            transform: translate(-50%, -100%) translateY(-12px);
+            pointer-events: none;
+            transition: left 0.15s ease-out, opacity 0.2s;
+            white-space: nowrap;
+            z-index: 10;
+        }
+
+        .magnet-tooltip.snapped {
+            transition: left 0.06s ease-out, opacity 0.2s;
+        }
+
+        /* ===========================================
+           DEMO: 09 Scroll Anticipation
+           =========================================== */
+        .demo-scroll {
+            top: 280px; left: 120px; right: 120px;
+            height: 340px;
+        }
+
+        .scroll-container {
+            width: 100%;
+            height: 100%;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .scroll-list {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .scroll-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            border-radius: 10px;
+            background: var(--bg);
+        }
+
+        .scroll-item .si-ticker {
+            font-family: var(--mono);
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .scroll-item .si-price {
+            font-family: var(--mono);
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .scroll-edge-top, .scroll-edge-bottom {
+            position: absolute;
+            left: 0; right: 0;
+            height: 4px;
+            z-index: 10;
+            transition: opacity 0.4s ease;
+        }
+
+        .scroll-edge-top {
+            top: 0;
+            background: var(--gain);
+            border-radius: 16px 16px 0 0;
+            opacity: 0;
+        }
+
+        .scroll-edge-bottom {
+            bottom: 0;
+            background: var(--accent);
+            border-radius: 0 0 16px 16px;
+        }
+
+        .scroll-fade-top, .scroll-fade-bottom {
+            position: absolute;
+            left: 0; right: 0;
+            height: 40px;
+            z-index: 5;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+        }
+
+        .scroll-fade-top {
+            top: 0;
+            background: linear-gradient(to bottom, var(--card), transparent);
+            opacity: 0;
+        }
+
+        .scroll-fade-bottom {
+            bottom: 0;
+            background: linear-gradient(to top, var(--card), transparent);
+        }
+
+        /* ===========================================
+           DEMO: 10 Weighted Paper
+           =========================================== */
+        .demo-paper {
+            top: 280px; left: 64px; right: 64px;
+            height: 360px;
+            display: flex;
+            gap: 16px;
+        }
+
+        .paper-card {
+            flex: 1;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            cursor: default;
+            transition: box-shadow 0.5s ease;
+            animation: paperHover 3.2s ease-in-out infinite;
+        }
+
+        .paper-card:nth-child(1) { animation-delay: 0s; }
+        .paper-card:nth-child(2) { animation-delay: 0.6s; }
+        .paper-card:nth-child(3) { animation-delay: 1.2s; }
+
+        @keyframes paperHover {
+            0%, 100% {
+                transform: translateY(0);
+                box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            }
+            15% {
+                transform: translateY(3px);
+                box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+            }
+            40% {
+                transform: translateY(-6px);
+                box-shadow: 0 12px 32px rgba(0,0,0,0.08);
+            }
+            65% {
+                transform: translateY(-6px);
+                box-shadow: 0 12px 32px rgba(0,0,0,0.08);
+            }
+            80% {
+                transform: translateY(0);
+                box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            }
+        }
+
+        .paper-card .pc-label {
+            font-family: var(--mono);
+            font-size: 10px;
+            color: var(--muted);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .paper-card .pc-value {
+            font-family: var(--serif);
+            font-size: 28px;
+            color: var(--text);
+            margin-top: 12px;
+        }
+
+        .paper-card .pc-change {
+            font-family: var(--mono);
+            font-size: 13px;
+            color: var(--gain);
+            margin-top: 4px;
+        }
+
+        .paper-card .pc-bar {
+            height: 80px;
+            margin-top: 20px;
+            background: linear-gradient(to top, rgba(45,106,79,0.06), transparent);
+            border-radius: 8px;
+        }
+
+        /* ===========================================
+           DEMO: 11 Session Warmth
+           =========================================== */
+        .demo-warmth {
+            top: 270px; left: 64px; right: 64px;
+            height: 380px;
+        }
+
+        .warmth-visual {
+            width: 100%;
+            height: 100%;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .warmth-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(60px);
+            animation: warmthShift 20s linear infinite;
+        }
+
+        .warmth-orb-1 {
+            width: 300px; height: 300px;
+            background: var(--gain);
+            top: 20%; left: 10%;
+            opacity: 0.12;
+            animation-duration: 18s;
+        }
+
+        .warmth-orb-2 {
+            width: 250px; height: 250px;
+            background: var(--accent);
+            top: 40%; right: 15%;
+            opacity: 0.1;
+            animation-duration: 22s;
+            animation-delay: -5s;
+        }
+
+        .warmth-orb-3 {
+            width: 200px; height: 200px;
+            background: #4a9e75;
+            bottom: 10%; left: 30%;
+            opacity: 0.08;
+            animation-duration: 25s;
+            animation-delay: -10s;
+        }
+
+        @keyframes warmthShift {
+            0% { filter: blur(60px) hue-rotate(0deg); }
+            50% { filter: blur(60px) hue-rotate(15deg); }
+            100% { filter: blur(60px) hue-rotate(25deg); }
+        }
+
+        .warmth-timeline {
+            position: absolute;
+            bottom: 40px;
+            left: 40px;
+            right: 40px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+        }
+
+        .warmth-tick {
+            text-align: center;
+        }
+
+        .warmth-tick .wt-label {
+            font-family: var(--mono);
+            font-size: 10px;
+            color: var(--muted);
+        }
+
+        .warmth-tick .wt-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            margin: 8px auto 0;
+        }
+
+        .warmth-center-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 5;
+        }
+
+        .warmth-center-text .wct-value {
+            font-family: var(--serif);
+            font-size: 48px;
+            color: var(--text);
+        }
+
+        .warmth-center-text .wct-label {
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--muted);
+            letter-spacing: 0.06em;
+            margin-top: 4px;
+        }
+
+        /* ===========================================
+           SLIDE 15: CTA (DARK)
+           =========================================== */
+        .cta-content {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 0 80px;
+            z-index: 10;
+        }
+
+        .cta-title {
+            font-family: var(--serif);
+            font-size: 56px;
+            color: var(--bg);
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+        }
+
+        .cta-title em {
+            color: #34d399;
+            font-style: italic;
+        }
+
+        .cta-body {
+            font-family: var(--sans);
+            font-size: 17px;
+            color: rgba(246, 244, 240, 0.45);
+            line-height: 1.6;
+            max-width: 540px;
+            margin-top: 24px;
+        }
+
+        .cta-links {
+            display: flex;
+            gap: 12px;
+            margin-top: 32px;
+        }
+
+        .cta-link {
+            font-family: var(--mono);
+            font-size: 12px;
+            padding: 10px 24px;
+            border-radius: 8px;
+            letter-spacing: 0.02em;
+        }
+
+        .cta-link.primary {
+            color: var(--accent);
+            border: 1px solid var(--accent);
+        }
+
+        .cta-link.secondary {
+            color: rgba(246, 244, 240, 0.35);
+            border: 1px solid rgba(246, 244, 240, 0.12);
+        }
+
+        .cta-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(100px);
+            z-index: 1;
+        }
+
+        .cta-orb-1 {
+            width: 500px; height: 500px;
+            background: var(--gain);
+            opacity: 0.08;
+            bottom: -150px; right: -100px;
+            animation: orbFloat1 15s ease-in-out infinite;
+        }
+
+        .cta-orb-2 {
+            width: 350px; height: 350px;
+            background: var(--accent);
+            opacity: 0.06;
+            top: -50px; left: -80px;
+            animation: orbFloat2 18s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body>
+
+<!-- ===========================================
+     NAVIGATION BAR
+     =========================================== -->
+<nav class="nav-bar" id="navBar">
+    <button id="prevBtn" aria-label="Previous slide">&#8592;</button>
+    <div class="nav-dots" id="navDots"></div>
+    <span class="counter" id="counter">1 / 15</span>
+    <button id="nextBtn" aria-label="Next slide">&#8594;</button>
+</nav>
+
+
+<!-- ===========================================
+     SLIDE 01: COVER
+     =========================================== -->
+<section class="slide" id="slide-1" aria-label="Cover">
+    <div class="bracket-tl"></div>
+    <div class="bracket-br"></div>
+    <span class="slide-num">01<span class="total">/15</span></span>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+
+    <div class="cover-content">
+        <div class="label reveal">Interaction Design + AI</div>
+        <h1 class="cover-title reveal" style="margin-top: 20px;">
+            Designing<br>Without <em>Thought</em>
+        </h1>
+        <p class="cover-sub reveal">
+            11 interaction patterns inspired by Naoto Fukasawa's philosophy — where motion is purposeful but invisible, and the interface simply feels alive.
+        </p>
+        <div class="tech-pills reveal">
+            <span class="tech-pill">C# + XAML</span>
+            <span class="tech-pill">SkiaSharp</span>
+            <span class="tech-pill">Uno Platform</span>
+            <span class="tech-pill">AI-Generated</span>
+        </div>
+    </div>
+
+    <div class="slide-footer">
+        <span class="brand">Meridian</span>
+        <span class="tagline">Capital Terminal</span>
+    </div>
+</section>
+
+
+<!-- ===========================================
+     SLIDE 02: THE THESIS
+     =========================================== -->
+<section class="slide" id="slide-2" aria-label="The Thesis">
+    <div class="bracket-tl"></div>
+    <div class="bracket-br"></div>
+    <span class="slide-num">02<span class="total">/15</span></span>
+
+    <div class="thesis-content">
+        <div class="label reveal">The Thesis</div>
+        <p class="thesis-quote reveal" style="margin-top: 20px;">
+            Most people assume AI-generated UI tops out at generic Material Design.<br><br>
+            <em>The difference is language.</em>
+        </p>
+        <p class="thesis-body reveal">
+            Describing what using an interface <strong>feels like</strong> is almost always more powerful than describing what it <strong>looks like</strong>. When you compress real design intent into sensory vocabulary, you stop getting default output and start getting output with a point of view.
+        </p>
+        <div class="thesis-callout reveal">
+            Not "animate card border" but "the chart exhales when you stop looking." <br>The vocabulary <strong>is</strong> the design tool.
+        </div>
+    </div>
+
+    <div class="slide-footer">
+        <span class="brand">Meridian</span>
+        <span class="tagline">Capital Terminal</span>
+    </div>
+</section>
+
+
+<!-- ===========================================
+     SLIDE 03: THE PRINCIPLES
+     =========================================== -->
+<section class="slide" id="slide-3" aria-label="Principles">
+    <div class="bracket-tl"></div>
+    <div class="bracket-br"></div>
+    <span class="slide-num">03<span class="total">/15</span></span>
+
+    <div class="principles-content">
+        <div class="label reveal">Architecture</div>
+        <h2 class="principles-title reveal" style="margin-top: 14px;">Six principles,<br>eleven interactions</h2>
+
+        <div class="reveal" style="transition-delay: 0.2s;">
+            <div class="principle-row">
+                <div class="dot" style="background: var(--gain);"></div>
+                <span class="principle-text">The object knows what time it is</span>
+                <div class="nums">
+                    <span class="num-badge">01</span>
+                    <span class="num-badge">11</span>
+                </div>
+            </div>
+            <div class="principle-row">
+                <div class="dot" style="background: var(--accent);"></div>
+                <span class="principle-text">Confirm without congratulating</span>
+                <div class="nums"><span class="num-badge gold">02</span></div>
+            </div>
+            <div class="principle-row">
+                <div class="dot" style="background: var(--loss);"></div>
+                <span class="principle-text">Reduce, then reduce again</span>
+                <div class="nums">
+                    <span class="num-badge" style="background: var(--loss);">04</span>
+                    <span class="num-badge" style="background: var(--loss);">07</span>
+                </div>
+            </div>
+            <div class="principle-row">
+                <div class="dot" style="background: var(--subtle);"></div>
+                <span class="principle-text">The absence teaches you what was there</span>
+                <div class="nums">
+                    <span class="num-badge muted-bg">05</span>
+                    <span class="num-badge muted-bg">06</span>
+                </div>
+            </div>
+            <div class="principle-row">
+                <div class="dot" style="background: var(--gain);"></div>
+                <span class="principle-text">The hand knows before the eye</span>
+                <div class="nums">
+                    <span class="num-badge">03</span>
+                    <span class="num-badge">08</span>
+                    <span class="num-badge">09</span>
+                </div>
+            </div>
+            <div class="principle-row">
+                <div class="dot" style="background: var(--accent);"></div>
+                <span class="principle-text">One material, one gesture</span>
+                <div class="nums"><span class="num-badge gold">10</span></div>
+            </div>
+        </div>
+
+        <div class="api-tags reveal" style="transition-delay: 0.35s;">
+            <span class="api-tag">Storyboard</span>
+            <span class="api-tag">CompositeTransform</span>
+            <span class="api-tag">ShadowContainer</span>
+            <span class="api-tag">SKXamlCanvas</span>
+            <span class="api-tag">VisualStateManager</span>
+            <span class="api-tag">HueRotationEffect</span>
+        </div>
+    </div>
+
+    <div class="slide-footer">
+        <span class="brand">Meridian</span>
+        <span class="tagline">Capital Terminal</span>
+    </div>
+</section>
+
+
+<!-- ===========================================
+     SLIDE 04: 01 Market Breathing
+     =========================================== -->
+<section class="slide" id="slide-4" aria-label="Market Breathing">
+    <div class="bracket-tl"></div>
+    <div class="bracket-br"></div>
+    <span class="slide-num">04<span class="total">/15</span></span>
+    <div class="pattern-num">01</div>
+
+    <div class="pattern-header">
+        <div class="label reveal">Pattern 01</div>
+        <h2 class="pattern-title reveal">Market Breathing</h2>
+        <p class="pattern-principle reveal">The object knows what time it is</p>
+        <p class="pattern-desc reveal" style="margin-top: 10px;">
+            Card borders pulse with a barely-visible glow during market hours, then go completely still after close.
+        </p>
+    </div>
+
+    <div class="demo-area demo-breathing">
+        <div class="breathing-card">
+            <div class="breathing-status">
+                <div class="status-dot"></div>
+                <span class="status-text">Market Open</span>
+            </div>
+            <div class="card-label">PERFORMANCE</div>
+            <div class="card-ticker">AAPL</div>
+            <div class="card-price">$247.63</div>
+            <div class="card-change">+1.40%</div>
+            <svg class="breathing-chart" viewBox="0 0 600 140" preserveAspectRatio="none">
+                <defs>
+                    <linearGradient id="bgr1" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#2d6a4f" stop-opacity="0.12"/>
+                        <stop offset="100%" stop-color="#2d6a4f" stop-opacity="0"/>
+                    </linearGradient>
+                </defs>
+                <path d="M0,110 C50,105 90,85 140,75 C190,65 230,45 280,40 C330,35 370,50 420,55 C470,60 510,25 560,18 C600,12 600,20 600,15 L600,140 L0,140 Z" fill="url(#bgr1)"/>
+                <path d="M0,110 C50,105 90,85 140,75 C190,65 230,45 280,40 C330,35 370,50 420,55 C470,60 510,25 560,18 C600,12 600,20 600,15" fill="none" stroke="#2d6a4f" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+        </div>
+    </div>
+
+    <div class="specs">
+        <div class="spec"><span class="spec-label">Duration</span><span class="spec-value">5s loop</span></div>
+        <div class="spec"><span class="spec-label">Shadow</span><span class="spec-value">3-4% opacity</span></div>
+        <div class="spec"><span class="spec-label">API</span><span class="spec-value">ShadowContainer</span></div>
+        <div class="spec"><span class="spec-label">Thread</span><span class="spec-value">GPU-bound</span></div>
+    </div>
+
+    <div class="slide-footer">
+        <span class="brand">Meridian</span>
+        <span class="tagline">Capital Terminal</span>
+    </div>
+</section>
+
+
+<!-- ===========================================
+     SLIDE 05: 02 Chart Data Settle
+     =========================================== -->
+<section class="slide" id="slide-5" aria-label="Chart Data Settle">
+    <div class="bracket-tl"></div>
+    <div class="bracket-br"></div>
+    <span class="slide-num">05<span class="total">/15</span></span>
+    <div class="pattern-num">02</div>
+
+    <div class="pattern-header">
+        <div class="label reveal">Pattern 02</div>
+        <h2 class="pattern-title reveal">Chart Data Settle</h2>
+        <p class="pattern-principle reveal">Confirm without congratulating</p>
+        <p class="pattern-desc reveal" style="margin-top: 10px;">
+            Chart line overshoots ~2-4% on Y axis, then springs back like an analog gauge needle.
+        </p>
+    </div>
+
+    <div class="demo-area demo-settle">
+        <div class="settle-card">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase;">Performance — 3M</span>
+                <div style="display: flex; gap: 3px;">
+                    <span style="font-family: var(--mono); font-size: 10px; padding: 3px 8px; border-radius: 4px; color: var(--subtle);">1D</span>
+                    <span style="font-family: var(--mono); font-size: 10px; padding: 3px 8px; border-radius: 4px; color: var(--subtle);">1W</span>
+                    <span style="font-family: var(--mono); font-size: 10px; padding: 3px 8px; border-radius: 4px; color: var(--gain); background: rgba(45,106,79,0.08);">3M</span>
+                </div>
+            </div>
+            <div class="settle-chart-wrap animating">
+                <svg viewBox="0 0 900 240" preserveAspectRatio="none" style="width:100%; height:100%;">
+                    <defs>
+                        <linearGradient id="sg1" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#2d6a4f" stop-opacity="0.14"/>
+                            <stop offset="100%" stop-color="#2d6a4f" stop-opacity="0"/>
+                        </linearGradient>
+                    </defs>
+                    <path d="M0,200 C60,195 110,170 180,155 C250,140 300,100 380,85 C460,70 520,95 600,105 C680,115 740,55 810,40 C870,28 900,50 900,45 L900,240 L0,240 Z" fill="url(#sg1)"/>
+                    <path d="M0,200 C60,195 110,170 180,155 C250,140 300,100 380,85 C460,70 520,95 600,105 C680,115 740,55 810,40 C870,28 900,50 900,45" fill="none" stroke="#2d6a4f" stroke-width="2.5" stroke-linecap="round"/>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <div class="specs">
+        <div class="spec"><span class="spec-label">Overshoot</span><span class="spec-value">+4% ScaleY</span></div>
+        <div class="spec"><span class="spec-label">Settle</span><span class="spec-value">600ms BackEase</span></div>
+        <div class="spec"><span class="spec-label">API</span><span class="spec-value">CompositeTransform</span></div>
+        <div class="spec"><span class="spec-label">Thread</span><span class="spec-value">GPU-bound</span></div>
+    </div>
+
+    <div class="slide-footer">
+        <span class="brand">Meridian</span>
+        <span class="tagline">Capital Terminal</span>
+    </div>
+</section>
+
+
+<!-- ===========================================
+     SLIDE 06: 03 Ink Spread
+     =========================================== -->
+<section class="slide" id="slide-6" aria-label="Ink Spread">
+    <div class="bracket-tl"></div>
+    <div class="bracket-br"></div>
+    <span class="slide-num">06<span class="total">/15</span></span>
+    <div class="pattern-num">03</div>
+
+    <div class="pattern-header">
+        <div class="label reveal">Pattern 03</div>
+        <h2 class="pattern-title reveal">Ink Spread</h2>
+        <p class="pattern-principle reveal">The hand knows before the eye</p>
+        <p class="pattern-desc reveal" style="margin-top: 10px;">
+            Button fill radiates from the exact click point. Not from center — from where you touched.
+        </p>
+    </div>
+
+    <div class="demo-area demo-ink" id="inkDemo">
+        <div class="ink-btn" data-label="1D">1D</div>
+        <div class="ink-btn" data-label="1W">1W</div>
+        <div class="ink-btn active" data-label="1M">1M</div>
+        <div class="ink-btn" data-label="3M">3M</div>
+        <div class="ink-btn" data-label="YTD">YTD</div>
+        <div class="ink-btn" data-label="1Y">1Y</div>
+    </div>
+
+    <div class="specs">
+        <div class="spec"><span class="spec-label">Scale</span><span class="spec-value">0 &rarr; 3</span></div>
+        <div class="spec"><span class="spec-label">Duration</span><span class="spec-value">300ms</span></div>
+        <div class="spec"><span class="spec-label">Easing</span><span class="spec-value">CubicEase</span></div>
+        <div class="spec"><span class="spec-label">Origin</span><span class="spec-value">Click point</span></div>
+    </div>
+
+    <div class="slide-footer">
+        <span class="brand">Meridian</span>
+        <span class="tagline">Capital Terminal</span>
+    </div>
+</section>
+
+
+<!-- ===========================================
+     SLIDE 07: 04 Weight Whisper
+     =========================================== -->
+<section class="slide" id="slide-7" aria-label="Weight Whisper">
+    <div class="bracket-tl"></div>
+    <div class="bracket-br"></div>
+    <span class="slide-num">07<span class="total">/15</span></span>
+    <div class="pattern-num">04</div>
+
+    <div class="pattern-header">
+        <div class="label reveal">Pattern 04</div>
+        <h2 class="pattern-title reveal">Weight Whisper</h2>
+        <p class="pattern-principle reveal">Reduce, then reduce again</p>
+        <p class="pattern-desc reveal" style="margin-top: 10px;">
+            Hovering a holding subtly shifts the chart gradient — dense for heavy stocks, faint for light ones.
+        </p>
+    </div>
+
+    <div class="demo-area demo-whisper" id="whisperDemo">
+        <div class="whisper-layout">
+            <div class="whisper-chart">
+                <svg viewBox="0 0 600 360" preserveAspectRatio="none" style="width:100%; height:100%; position:absolute; top:0; left:0;">
+                    <path d="M0,280 C50,270 100,230 160,200 C220,170 280,130 350,115 C420,100 480,130 550,140 C600,150 600,160 600,155" fill="none" stroke="#2d6a4f" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <div class="whisper-gradient" id="whisperGrad" style="background: linear-gradient(to top, rgba(45,106,79,0.12), transparent);"></div>
+            </div>
+            <div class="whisper-holdings">
+                <div class="whisper-holding" data-weight="0.24" onmouseenter="setWhisper(0.24)" onmouseleave="setWhisper(0.12)">
+                    <div class="wh-ticker">AAPL</div>
+                    <div class="wh-weight">24% weight</div>
+                    <div class="wh-bar" style="width: 100%; opacity: 0.8;"></div>
+                </div>
+                <div class="whisper-holding" data-weight="0.18" onmouseenter="setWhisper(0.18)" onmouseleave="setWhisper(0.12)">
+                    <div class="wh-ticker">NVDA</div>
+                    <div class="wh-weight">18% weight</div>
+                    <div class="wh-bar" style="width: 75%; opacity: 0.6;"></div>
+                </div>
+                <div class="whisper-holding" data-weight="0.12" onmouseenter="setWhisper(0.12)" onmouseleave="setWhisper(0.12)">
+                    <div class="wh-ticker">MSFT</div>
+                    <div class="wh-weight">12% weight</div>
+                    <div class="wh-bar" style="width: 50%; opacity: 0.45;"></div>
+                </div>
+                <div class="whisper-holding" data-weight="0.08" onmouseenter="setWhisper(0.08)" onmouseleave="setWhisper(0.12)">
+                    <div class="wh-ticker">JPM</div>
+                    <div class="wh-weight">8% weight</div>
+                    <div class="wh-bar" style="width: 33%; opacity: 0.3;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="specs">
+        <div class="spec"><span class="spec-label">Interpolation</span><span class="spec-value">Spring 16ms</span></div>
+        <div class="spec"><span class="spec-label">Renderer</span><span class="spec-value">SKXamlCanvas</span></div>
+        <div class="spec"><span class="spec-label">Binding</span><span class="spec-value">HoveredWeight</span></div>
+    </div>
+
+    <div class="slide-footer">
+        <span class="brand">Meridian</span>
+        <span class="tagline">Capital Terminal</span>
+    </div>
+</section>
+
+
+<!-- ===========================================
+     SLIDE 08: 05 Silence on Leave
+     =========================================== -->
+<section class="slide" id="slide-8" aria-label="Silence on Leave">
+    <div class="bracket-tl"></div>
+    <div class="bracket-br"></div>
+    <span class="slide-num">08<span class="total">/15</span></span>
+    <div class="pattern-num">05</div>
+
+    <div class="pattern-header">
+        <div class="label reveal">Pattern 05</div>
+        <h2 class="pattern-title reveal">Silence on Leave</h2>
+        <p class="pattern-principle reveal">The absence teaches you what was there</p>
+        <p class="pattern-desc reveal" style="margin-top: 10px;">
+            Card content dips to 92% opacity for 600ms when the cursor exits. The chart exhales when you stop looking.
+        </p>
+    </div>
+
+    <div class="demo-area demo-silence" id="silenceDemo">
+        <div class="silence-card" id="silenceCard1">
+            <div style="font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase;">Chart</div>
+            <svg viewBox="0 0 300 180" style="width: 100%; margin-top: 12px;">
+                <defs><linearGradient id="sc1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2d6a4f" stop-opacity="0.1"/><stop offset="100%" stop-color="#2d6a4f" stop-opacity="0"/></linearGradient></defs>
+                <path d="M0,140 C30,135 60,110 100,90 C140,70 180,50 220,45 C260,40 300,55 300,50 L300,180 L0,180 Z" fill="url(#sc1)"/>
+                <path d="M0,140 C30,135 60,110 100,90 C140,70 180,50 220,45 C260,40 300,55 300,50" fill="none" stroke="#2d6a4f" stroke-width="2"/>
+            </svg>
+        </div>
+        <div class="silence-card" id="silenceCard2">
+            <div style="font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase;">Holdings</div>
+            <div style="margin-top: 16px; display: flex; flex-direction: column; gap: 10px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-family: var(--mono); font-size: 13px; font-weight: 600;">AAPL</span>
+                    <div style="flex: 1; height: 3px; border-radius: 2px; background: var(--gain); opacity: 0.4;"></div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-family: var(--mono); font-size: 13px; font-weight: 600;">NVDA</span>
+                    <div style="flex: 1; height: 3px; border-radius: 2px; background: var(--gain); opacity: 0.3;"></div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-family: var(--mono); font-size: 13px; font-weight: 600;">MSFT</span>
+                    <div style="flex: 1; height: 3px; border-radius: 2px; background: var(--gain); opacity: 0.2;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="specs">
+        <div class="spec"><span class="spec-label">Dip</span><span class="spec-value">92% opacity</span></div>
+        <div class="spec"><span class="spec-label">Duration</span><span class="spec-value">600ms</span></div>
+        <div class="spec"><span class="spec-label">Trigger</span><span class="spec-value">PointerExited</span></div>
+        <div class="spec"><span class="spec-label">Thread</span><span class="spec-value">GPU-bound</span></div>
+    </div>
+
+    <div class="slide-footer">
+        <span class="brand">Meridian</span>
+        <span class="tagline">Capital Terminal</span>
+    </div>
+</section>
+
+
+<!-- ===========================================
+     SLIDE 09: 06 Empty State Gravity
+     =========================================== -->
+<section class="slide" id="slide-9" aria-label="Empty State Gravity">
+    <div class="bracket-tl"></div>
+    <div class="bracket-br"></div>
+    <span class="slide-num">09<span class="total">/15</span></span>
+    <div class="pattern-num">06</div>
+
+    <div class="pattern-header">
+        <div class="label reveal">Pattern 06</div>
+        <h2 class="pattern-title reveal">Empty State Gravity</h2>
+        <p class="pattern-principle reveal">The absence teaches you what was there</p>
+        <p class="pattern-desc reveal" style="margin-top: 10px;">
+            When search returns no results, the container gains an inward shadow. Emptiness has physical weight.
+        </p>
+    </div>
+
+    <div class="demo-area demo-gravity" id="gravityDemo">
+        <div class="gravity-container" id="gravityBox">
+            <div class="gravity-search">
+                <span class="gravity-search-icon">&#x1F50D;</span>
+                <span class="gravity-search-text" id="gravitySearchText"></span>
+                <span class="gravity-cursor"></span>
+            </div>
+            <div class="gravity-text">
+                <span class="gravity-icon">&#x2205;</span>
+                No results found
+            </div>
+        </div>
+    </div>
+
+    <div class="specs">
+        <div class="spec"><span class="spec-label">Shadow</span><span class="spec-value">Inner, 16px blur</span></div>
+        <div class="spec"><span class="spec-label">Opacity</span><span class="spec-value">6%</span></div>
+        <div class="spec"><span class="spec-label">API</span><span class="spec-value">ShadowContainer</span></div>
+        <div class="spec"><span class="spec-label">Transition</span><span class="spec-value">500ms VSM</span></div>
+    </div>
+
+    <div class="slide-footer">
+        <span class="brand">Meridian</span>
+        <span class="tagline">Capital Terminal</span>
+    </div>
+</section>
+
+
+<!-- ===========================================
+     SLIDE 10: 07 Data-Driven Braille
+     =========================================== -->
+<section class="slide" id="slide-10" aria-label="Data-Driven Braille">
+    <div class="bracket-tl"></div>
+    <div class="bracket-br"></div>
+    <span class="slide-num">10<span class="total">/15</span></span>
+    <div class="pattern-num">07</div>
+
+    <div class="pattern-header">
+        <div class="label reveal">Pattern 07</div>
+        <h2 class="pattern-title reveal">Data-Driven Braille</h2>
+        <p class="pattern-principle reveal">Reduce, then reduce again</p>
+        <p class="pattern-desc reveal" style="margin-top: 10px;">
+            Braille activity indicators tethered to actual percentage change. Volatile stocks pulse fast, calm ones are nearly still.
+        </p>
+    </div>
+
+    <div class="demo-area demo-braille" id="brailleDemo">
+        <div class="braille-rows">
+            <div class="braille-row">
+                <span class="braille-ticker">TSLA</span>
+                <span class="braille-change down">-1.84%</span>
+                <span class="braille-stream" id="braille-tsla"></span>
+                <span class="braille-intensity-label">high</span>
+            </div>
+            <div class="braille-row">
+                <span class="braille-ticker">AAPL</span>
+                <span class="braille-change up">+1.40%</span>
+                <span class="braille-stream" id="braille-aapl"></span>
+                <span class="braille-intensity-label">medium</span>
+            </div>
+            <div class="braille-row">
+                <span class="braille-ticker">NVDA</span>
+                <span class="braille-change up">+3.21%</span>
+                <span class="braille-stream" id="braille-nvda"></span>
+                <span class="braille-intensity-label">very high</span>
+            </div>
+            <div class="braille-row">
+                <span class="braille-ticker">MSFT</span>
+                <span class="braille-change down">-0.82%</span>
+                <span class="braille-stream" id="braille-msft"></span>
+                <span class="braille-intensity-label">low</span>
+            </div>
+            <div class="braille-row">
+                <span class="braille-ticker">JPM</span>
+                <span class="braille-change up">+0.34%</span>
+                <span class="braille-stream" id="braille-jpm"></span>
+                <span class="braille-intensity-label">very low</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="specs">
+        <div class="spec"><span class="spec-label">Rate</span><span class="spec-value">70ms / step</span></div>
+        <div class="spec"><span class="spec-label">Formula</span><span class="spec-value">sin(f * 0.2 * I)</span></div>
+        <div class="spec"><span class="spec-label">Renderer</span><span class="spec-value">SKXamlCanvas</span></div>
+    </div>
+
+    <div class="slide-footer">
+        <span class="brand">Meridian</span>
+        <span class="tagline">Capital Terminal</span>
+    </div>
+</section>
+
+
+<!-- ===========================================
+     SLIDE 11: 08 Tooltip Magnetism
+     =========================================== -->
+<section class="slide" id="slide-11" aria-label="Tooltip Magnetism">
+    <div class="bracket-tl"></div>
+    <div class="bracket-br"></div>
+    <span class="slide-num">11<span class="total">/15</span></span>
+    <div class="pattern-num">08</div>
+
+    <div class="pattern-header">
+        <div class="label reveal">Pattern 08</div>
+        <h2 class="pattern-title reveal">Tooltip Magnetism</h2>
+        <p class="pattern-principle reveal">The hand knows before the eye</p>
+        <p class="pattern-desc reveal" style="margin-top: 10px;">
+            Crosshair snaps to data points with acceleration. The user feels data points as physical detents.
+        </p>
+    </div>
+
+    <div class="demo-area demo-magnet" id="magnetDemo">
+        <div class="magnet-chart" id="magnetChart">
+            <svg viewBox="0 0 800 340" preserveAspectRatio="none" style="width:100%; height:100%; position:absolute; top:0; left:0;">
+                <defs>
+                    <linearGradient id="mg1" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#2d6a4f" stop-opacity="0.08"/>
+                        <stop offset="100%" stop-color="#2d6a4f" stop-opacity="0"/>
+                    </linearGradient>
+                </defs>
+                <path d="M40,260 C100,250 160,200 240,170 C320,140 380,100 460,80 C540,60 600,90 680,100 C740,108 780,70 780,65 L780,320 L40,320 Z" fill="url(#mg1)"/>
+                <path d="M40,260 C100,250 160,200 240,170 C320,140 380,100 460,80 C540,60 600,90 680,100 C740,108 780,70 780,65" fill="none" stroke="#2d6a4f" stroke-width="2" stroke-linecap="round" id="magnetLine"/>
+            </svg>
+            <div class="magnet-dot" style="left: 10%; top: 76%;"></div>
+            <div class="magnet-dot" style="left: 25%; top: 50%;"></div>
+            <div class="magnet-dot" style="left: 45%; top: 30%;"></div>
+            <div class="magnet-dot" style="left: 60%; top: 24%;"></div>
+            <div class="magnet-dot" style="left: 78%; top: 29%;"></div>
+            <div class="magnet-dot" style="left: 92%; top: 20%;"></div>
+
+            <div class="magnet-crosshair" id="magnetCrosshair" style="left: 45%;"></div>
+            <div class="magnet-tooltip" id="magnetTooltip" style="left: 45%; top: 25%;">$247.63 &middot; Mar 15</div>
+
+            <!-- Snap radius rings -->
+            <div class="magnet-snap-ring" style="left: 45%; top: 30%;" id="snapRing"></div>
+        </div>
+    </div>
+
+    <div class="specs">
+        <div class="spec"><span class="spec-label">Snap radius</span><span class="spec-value">18px</span></div>
+        <div class="spec"><span class="spec-label">Snap lerp</span><span class="spec-value">0.7</span></div>
+        <div class="spec"><span class="spec-label">Free lerp</span><span class="spec-value">0.4</span></div>
+        <div class="spec"><span class="spec-label">Renderer</span><span class="spec-value">SKXamlCanvas</span></div>
+    </div>
+
+    <div class="slide-footer">
+        <span class="brand">Meridian</span>
+        <span class="tagline">Capital Terminal</span>
+    </div>
+</section>
+
+
+<!-- ===========================================
+     SLIDE 12: 09 Scroll Anticipation
+     =========================================== -->
+<section class="slide" id="slide-12" aria-label="Scroll Anticipation">
+    <div class="bracket-tl"></div>
+    <div class="bracket-br"></div>
+    <span class="slide-num">12<span class="total">/15</span></span>
+    <div class="pattern-num">09</div>
+
+    <div class="pattern-header">
+        <div class="label reveal">Pattern 09</div>
+        <h2 class="pattern-title reveal">Scroll Anticipation</h2>
+        <p class="pattern-principle reveal">The hand knows before the eye</p>
+        <p class="pattern-desc reveal" style="margin-top: 10px;">
+            Accent-colored edge bars appear at scroll boundaries. The list communicates its own boundaries.
+        </p>
+    </div>
+
+    <div class="demo-area demo-scroll">
+        <div class="scroll-container">
+            <div class="scroll-edge-top" id="scrollEdgeTop"></div>
+            <div class="scroll-edge-bottom" id="scrollEdgeBottom"></div>
+            <div class="scroll-fade-top" id="scrollFadeTop"></div>
+            <div class="scroll-fade-bottom" id="scrollFadeBottom"></div>
+            <div class="scroll-list">
+                <div class="scroll-item"><span class="si-ticker">AAPL</span><span class="si-price" style="color: var(--gain);">$247.63</span></div>
+                <div class="scroll-item"><span class="si-ticker">NVDA</span><span class="si-price" style="color: var(--gain);">$892.14</span></div>
+                <div class="scroll-item"><span class="si-ticker">MSFT</span><span class="si-price" style="color: var(--loss);">$468.21</span></div>
+                <div class="scroll-item"><span class="si-ticker">TSLA</span><span class="si-price" style="color: var(--loss);">$173.44</span></div>
+                <div class="scroll-item"><span class="si-ticker">GOOGL</span><span class="si-price" style="color: var(--gain);">$174.89</span></div>
+                <div class="scroll-item"><span class="si-ticker">AMZN</span><span class="si-price" style="color: var(--gain);">$201.33</span></div>
+                <div class="scroll-item"><span class="si-ticker">META</span><span class="si-price" style="color: var(--gain);">$612.77</span></div>
+                <div class="scroll-item"><span class="si-ticker">JPM</span><span class="si-price" style="color: var(--gain);">$243.18</span></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="specs">
+        <div class="spec"><span class="spec-label">Trigger</span><span class="spec-value">ViewChanged</span></div>
+        <div class="spec"><span class="spec-label">Transition</span><span class="spec-value">400ms opacity</span></div>
+        <div class="spec"><span class="spec-label">API</span><span class="spec-value">VisualStateManager</span></div>
+        <div class="spec"><span class="spec-label">Thread</span><span class="spec-value">GPU-bound</span></div>
+    </div>
+
+    <div class="slide-footer">
+        <span class="brand">Meridian</span>
+        <span class="tagline">Capital Terminal</span>
+    </div>
+</section>
+
+
+<!-- ===========================================
+     SLIDE 13: 10 Weighted Paper
+     =========================================== -->
+<section class="slide" id="slide-13" aria-label="Weighted Paper">
+    <div class="bracket-tl"></div>
+    <div class="bracket-br"></div>
+    <span class="slide-num">13<span class="total">/15</span></span>
+    <div class="pattern-num">10</div>
+
+    <div class="pattern-header">
+        <div class="label reveal">Pattern 10</div>
+        <h2 class="pattern-title reveal">Weighted Paper</h2>
+        <p class="pattern-principle reveal">One material, one gesture</p>
+        <p class="pattern-desc reveal" style="margin-top: 10px;">
+            Cards press down 3px before rising to -6px. One material, everything feels coherent.
+        </p>
+    </div>
+
+    <div class="demo-area demo-paper">
+        <div class="paper-card">
+            <div class="pc-label">Portfolio Value</div>
+            <div class="pc-value">$163,842</div>
+            <div class="pc-change">+$40,274 (32.63%)</div>
+            <div class="pc-bar"></div>
+        </div>
+        <div class="paper-card">
+            <div class="pc-label">Day Change</div>
+            <div class="pc-value">+$1,247</div>
+            <div class="pc-change">+0.76%</div>
+            <div class="pc-bar"></div>
+        </div>
+        <div class="paper-card">
+            <div class="pc-label">Holdings</div>
+            <div class="pc-value">12</div>
+            <div class="pc-change">5 sectors</div>
+            <div class="pc-bar"></div>
+        </div>
+    </div>
+
+    <div class="specs">
+        <div class="spec"><span class="spec-label">Press</span><span class="spec-value">+3px (80ms)</span></div>
+        <div class="spec"><span class="spec-label">Lift</span><span class="spec-value">-6px (500ms)</span></div>
+        <div class="spec"><span class="spec-label">Easing</span><span class="spec-value">ElasticEase</span></div>
+        <div class="spec"><span class="spec-label">API</span><span class="spec-value">TranslateY</span></div>
+    </div>
+
+    <div class="slide-footer">
+        <span class="brand">Meridian</span>
+        <span class="tagline">Capital Terminal</span>
+    </div>
+</section>
+
+
+<!-- ===========================================
+     SLIDE 14: 11 Session Warmth
+     =========================================== -->
+<section class="slide" id="slide-14" aria-label="Session Warmth">
+    <div class="bracket-tl"></div>
+    <div class="bracket-br"></div>
+    <span class="slide-num">14<span class="total">/15</span></span>
+    <div class="pattern-num">11</div>
+
+    <div class="pattern-header">
+        <div class="label reveal">Pattern 11</div>
+        <h2 class="pattern-title reveal">Session Warmth</h2>
+        <p class="pattern-principle reveal">The object knows what time it is</p>
+        <p class="pattern-desc reveal" style="margin-top: 10px;">
+            Ambient orbs drift warmer over time, capping at +25&deg; hue after ~20 minutes. A patina of use.
+        </p>
+    </div>
+
+    <div class="demo-area demo-warmth">
+        <div class="warmth-visual">
+            <div class="warmth-orb warmth-orb-1"></div>
+            <div class="warmth-orb warmth-orb-2"></div>
+            <div class="warmth-orb warmth-orb-3"></div>
+
+            <div class="warmth-center-text">
+                <div class="wct-value" id="warmthDeg">+0&deg;</div>
+                <div class="wct-label">Hue rotation</div>
+            </div>
+
+            <div class="warmth-timeline">
+                <div class="warmth-tick">
+                    <div class="wt-label">0 min</div>
+                    <div class="wt-dot" style="background: #2d6a4f;"></div>
+                </div>
+                <div class="warmth-tick">
+                    <div class="wt-label">5 min</div>
+                    <div class="wt-dot" style="background: #367a5a;"></div>
+                </div>
+                <div class="warmth-tick">
+                    <div class="wt-label">10 min</div>
+                    <div class="wt-dot" style="background: #408a65;"></div>
+                </div>
+                <div class="warmth-tick">
+                    <div class="wt-label">15 min</div>
+                    <div class="wt-dot" style="background: #4a9a70;"></div>
+                </div>
+                <div class="warmth-tick">
+                    <div class="wt-label">20 min</div>
+                    <div class="wt-dot" style="background: #55aa7b;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="specs">
+        <div class="spec"><span class="spec-label">Cap</span><span class="spec-value">+25&deg; hue</span></div>
+        <div class="spec"><span class="spec-label">Rate</span><span class="spec-value">0.02&deg;/sec</span></div>
+        <div class="spec"><span class="spec-label">API</span><span class="spec-value">HueRotationEffect</span></div>
+        <div class="spec"><span class="spec-label">Thread</span><span class="spec-value">Compositor</span></div>
+    </div>
+
+    <div class="slide-footer">
+        <span class="brand">Meridian</span>
+        <span class="tagline">Capital Terminal</span>
+    </div>
+</section>
+
+
+<!-- ===========================================
+     SLIDE 15: CTA (DARK)
+     =========================================== -->
+<section class="slide dark" id="slide-15" aria-label="Call to Action">
+    <div class="bracket-tl"></div>
+    <div class="bracket-br"></div>
+    <span class="slide-num">15<span class="total">/15</span></span>
+    <div class="cta-orb cta-orb-1"></div>
+    <div class="cta-orb cta-orb-2"></div>
+
+    <div class="cta-content">
+        <div class="label reveal">The Takeaway</div>
+        <h2 class="cta-title reveal" style="margin-top: 20px;">
+            The ceiling is the<br>
+            <em>assumption,</em><br>
+            not the tool.
+        </h2>
+        <p class="cta-body reveal">
+            AI-generated UI doesn't have to look generic. The Meridian Design System proves that editorial luxury is achievable with C#, XAML, and the right design constraints.
+        </p>
+        <div class="cta-links reveal">
+            <span class="cta-link primary">Read the article &rarr;</span>
+            <span class="cta-link secondary">View prototype &rarr;</span>
+        </div>
+        <div class="reveal" style="margin-top: 32px; transition-delay: 0.5s;">
+            <div style="font-family: var(--serif); font-style: italic; font-size: 15px; color: rgba(246,244,240,0.3); line-height: 1.5;">
+                "The ones users can see come last.<br>The ones they can only feel come first."
+            </div>
+        </div>
+    </div>
+
+    <div class="slide-footer">
+        <span class="brand">Meridian</span>
+        <span class="tagline">Capital Terminal</span>
+    </div>
+</section>
+
+
+<!-- ===========================================
+     JAVASCRIPT — Presentation Controller
+     =========================================== -->
+<script>
+    /* ===========================================
+       SLIDE PRESENTATION CONTROLLER
+       =========================================== */
+    class SlidePresentation {
+        constructor() {
+            this.slides = document.querySelectorAll('.slide');
+            this.currentSlide = 0;
+            this.total = this.slides.length;
+            this.isScrolling = false;
+
+            this.setupIntersectionObserver();
+            this.setupKeyboardNav();
+            this.setupNavDots();
+            this.setupTouchNav();
+            this.updateNav();
+
+            // Mark first slide visible
+            this.slides[0].classList.add('visible');
+        }
+
+        setupIntersectionObserver() {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                        const idx = Array.from(this.slides).indexOf(entry.target);
+                        if (idx !== -1) {
+                            this.currentSlide = idx;
+                            this.updateNav();
+                        }
+                    }
+                });
+            }, { threshold: 0.5 });
+
+            this.slides.forEach(s => observer.observe(s));
+        }
+
+        setupKeyboardNav() {
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowDown' || e.key === 'ArrowRight' || e.key === ' ') {
+                    e.preventDefault();
+                    this.goTo(Math.min(this.currentSlide + 1, this.total - 1));
+                } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    this.goTo(Math.max(this.currentSlide - 1, 0));
+                } else if (e.key === 'Home') {
+                    e.preventDefault();
+                    this.goTo(0);
+                } else if (e.key === 'End') {
+                    e.preventDefault();
+                    this.goTo(this.total - 1);
+                }
+            });
+
+            document.getElementById('prevBtn').addEventListener('click', () => {
+                this.goTo(Math.max(this.currentSlide - 1, 0));
+            });
+
+            document.getElementById('nextBtn').addEventListener('click', () => {
+                this.goTo(Math.min(this.currentSlide + 1, this.total - 1));
+            });
+        }
+
+        setupTouchNav() {
+            let startY = 0;
+            document.addEventListener('touchstart', (e) => { startY = e.touches[0].clientY; });
+            document.addEventListener('touchend', (e) => {
+                const diff = startY - e.changedTouches[0].clientY;
+                if (Math.abs(diff) > 50) {
+                    if (diff > 0) this.goTo(Math.min(this.currentSlide + 1, this.total - 1));
+                    else this.goTo(Math.max(this.currentSlide - 1, 0));
+                }
+            });
+        }
+
+        setupNavDots() {
+            const container = document.getElementById('navDots');
+            for (let i = 0; i < this.total; i++) {
+                const dot = document.createElement('button');
+                dot.className = 'dot';
+                dot.setAttribute('aria-label', `Go to slide ${i + 1}`);
+                dot.addEventListener('click', () => this.goTo(i));
+                container.appendChild(dot);
+            }
+        }
+
+        goTo(idx) {
+            this.currentSlide = idx;
+            this.slides[idx].scrollIntoView({ behavior: 'smooth' });
+            this.updateNav();
+        }
+
+        updateNav() {
+            document.getElementById('counter').textContent = `${this.currentSlide + 1} / ${this.total}`;
+            document.getElementById('prevBtn').disabled = this.currentSlide === 0;
+            document.getElementById('nextBtn').disabled = this.currentSlide === this.total - 1;
+
+            document.querySelectorAll('.nav-dots .dot').forEach((d, i) => {
+                d.classList.toggle('active', i === this.currentSlide);
+            });
+        }
+    }
+
+
+    /* ===========================================
+       INK SPREAD DEMO — Auto-cycling ripple
+       =========================================== */
+    (function initInkDemo() {
+        const btns = document.querySelectorAll('#inkDemo .ink-btn');
+        let activeIdx = 2;
+        let cycle = 0;
+
+        function fireRipple(btn, offsetX, offsetY) {
+            // Remove active from all
+            btns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            const ripple = document.createElement('div');
+            ripple.className = 'ink-ripple';
+            ripple.style.width = '200px';
+            ripple.style.height = '200px';
+            ripple.style.left = (offsetX - 100) + 'px';
+            ripple.style.top = (offsetY - 100) + 'px';
+            btn.appendChild(ripple);
+
+            requestAnimationFrame(() => ripple.classList.add('go'));
+            setTimeout(() => ripple.remove(), 700);
+        }
+
+        setInterval(() => {
+            cycle++;
+            const idx = cycle % btns.length;
+            const btn = btns[idx];
+            const rect = btn.getBoundingClientRect();
+            // Randomize click point offset within button
+            const offX = 10 + Math.random() * (btn.offsetWidth - 20);
+            const offY = 8 + Math.random() * (btn.offsetHeight - 16);
+            fireRipple(btn, offX, offY);
+        }, 1800);
+    })();
+
+
+    /* ===========================================
+       WEIGHT WHISPER — Gradient density
+       =========================================== */
+    function setWhisper(weight) {
+        const grad = document.getElementById('whisperGrad');
+        const opacity = Math.min(0.35, weight * 1.2);
+        grad.style.background = `linear-gradient(to top, rgba(45,106,79,${opacity}), transparent)`;
+    }
+
+
+    /* ===========================================
+       SILENCE ON LEAVE — Dim on exit
+       =========================================== */
+    (function initSilence() {
+        const cards = document.querySelectorAll('#silenceDemo .silence-card');
+        let idx = 0;
+
+        setInterval(() => {
+            const card = cards[idx % cards.length];
+            card.classList.remove('dim');
+            void card.offsetWidth; // reflow
+            card.classList.add('dim');
+            idx++;
+        }, 2200);
+    })();
+
+
+    /* ===========================================
+       EMPTY STATE GRAVITY — Typing + shadow
+       =========================================== */
+    (function initGravity() {
+        const box = document.getElementById('gravityBox');
+        const text = document.getElementById('gravitySearchText');
+        const search = "XYZQ";
+        let phase = 0; // 0=typing, 1=empty, 2=clearing, 3=results
+
+        function runCycle() {
+            // Phase 0: Type search term
+            let i = 0;
+            text.textContent = '';
+            box.classList.remove('empty');
+
+            const typeInterval = setInterval(() => {
+                text.textContent += search[i];
+                i++;
+                if (i >= search.length) {
+                    clearInterval(typeInterval);
+                    // Phase 1: Show empty state
+                    setTimeout(() => {
+                        box.classList.add('empty');
+                        // Phase 2: Wait then clear
+                        setTimeout(() => {
+                            box.classList.remove('empty');
+                            text.textContent = '';
+                            // Phase 3: Restart
+                            setTimeout(runCycle, 1200);
+                        }, 2500);
+                    }, 600);
+                }
+            }, 180);
+        }
+
+        setTimeout(runCycle, 1500);
+    })();
+
+
+    /* ===========================================
+       BRAILLE TICKER — Live streaming
+       =========================================== */
+    (function initBraille() {
+        const levels = ["\u2800", "\u28C0", "\u28E4", "\u28F4", "\u28F6", "\u28F7", "\u28FF"];
+        const stocks = [
+            { id: 'braille-tsla', intensity: 0.92, seed: 0 },
+            { id: 'braille-aapl', intensity: 0.55, seed: 7 },
+            { id: 'braille-nvda', intensity: 1.0, seed: 3 },
+            { id: 'braille-msft', intensity: 0.35, seed: 11 },
+            { id: 'braille-jpm', intensity: 0.22, seed: 5 },
+        ];
+
+        let frame = 0;
+
+        setInterval(() => {
+            frame++;
+            stocks.forEach(stock => {
+                const el = document.getElementById(stock.id);
+                if (!el) return;
+                let html = '';
+                for (let i = 0; i < 20; i++) {
+                    const v = 0.5 + Math.sin((i + frame) * 0.2 * stock.intensity + stock.seed) * 0.35
+                            + Math.sin((i + frame) * 0.09 * stock.intensity + stock.seed * 2) * 0.2;
+                    const clamped = Math.max(0, Math.min(1, v));
+                    const idx = Math.round(clamped * 6);
+                    const color = clamped > 0.75 ? '#2d6a4f' : clamped > 0.55 ? '#c9a96e' : '#c4c0b8';
+                    const alpha = 0.3 + clamped * 0.6;
+                    html += `<span style="color:${color};opacity:${alpha}">${levels[idx]}</span>`;
+                }
+                el.innerHTML = html;
+            });
+        }, 70);
+    })();
+
+
+    /* ===========================================
+       TOOLTIP MAGNETISM — Auto-moving crosshair
+       =========================================== */
+    (function initMagnet() {
+        const crosshair = document.getElementById('magnetCrosshair');
+        const tooltip = document.getElementById('magnetTooltip');
+        const ring = document.getElementById('snapRing');
+
+        const dataPoints = [
+            { x: 10, y: 76, label: '$202.15 \u00B7 Jan 3' },
+            { x: 25, y: 50, label: '$221.88 \u00B7 Jan 22' },
+            { x: 45, y: 30, label: '$247.63 \u00B7 Feb 14' },
+            { x: 60, y: 24, label: '$258.44 \u00B7 Mar 1' },
+            { x: 78, y: 29, label: '$251.90 \u00B7 Mar 15' },
+            { x: 92, y: 20, label: '$267.12 \u00B7 Mar 24' },
+        ];
+
+        let currentX = 10;
+        let targetX = 10;
+        let pointIdx = 0;
+        let snapped = false;
+
+        // Auto-traverse
+        setInterval(() => {
+            pointIdx = (pointIdx + 1) % dataPoints.length;
+            targetX = dataPoints[pointIdx].x;
+        }, 1600);
+
+        // Render loop
+        function animate() {
+            // Find nearest point
+            let nearest = dataPoints[0];
+            let minDist = Infinity;
+            dataPoints.forEach(p => {
+                const d = Math.abs(currentX - p.x);
+                if (d < minDist) { minDist = d; nearest = p; }
+            });
+
+            const snapRadius = 5; // percentage units
+            const isNear = minDist < snapRadius;
+            const lerp = isNear ? 0.12 : 0.05;
+
+            currentX += (targetX - currentX) * lerp;
+
+            crosshair.style.left = currentX + '%';
+            crosshair.classList.toggle('snapped', isNear);
+
+            tooltip.style.left = currentX + '%';
+            tooltip.style.top = nearest.y + '%';
+            tooltip.textContent = nearest.label;
+            tooltip.classList.toggle('snapped', isNear);
+
+            ring.style.left = nearest.x + '%';
+            ring.style.top = nearest.y + '%';
+            ring.classList.toggle('show', isNear);
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+    })();
+
+
+    /* ===========================================
+       SESSION WARMTH — Hue counter
+       =========================================== */
+    (function initWarmth() {
+        const el = document.getElementById('warmthDeg');
+        let deg = 0;
+
+        setInterval(() => {
+            deg = Math.min(25, deg + 0.5);
+            if (deg >= 25) deg = 0;
+            el.textContent = '+' + Math.round(deg) + '\u00B0';
+        }, 400);
+    })();
+
+
+    /* ===========================================
+       INIT
+       =========================================== */
+    document.addEventListener('DOMContentLoaded', () => {
+        new SlidePresentation();
+    });
+</script>
+
+</body>
+</html>
