@@ -6,7 +6,7 @@
       xmlns:ll="using:Liveline"
       xmlns:controls="using:Meridian.Controls"
       xmlns:views="using:Meridian.Views"
-      xmlns:converters="using:Meridian.Presentation"
+      xmlns:converters="using:Meridian.Converters"
       xmlns:models="using:Meridian.Models"
       Background="{ThemeResource MeridianBackgroundBrush}">
 
@@ -94,7 +94,8 @@
                                    x:Name="BrailleSpinner"
                                    AutomationProperties.AccessibilityView="Raw" />
                         <TextBlock Text="NYSE Open" FontSize="11" FontWeight="Medium"
-                                   Foreground="{ThemeResource MeridianTextMutedBrush}" />
+                                   Foreground="{ThemeResource MeridianTextMutedBrush}"
+                                   x:Uid="Dashboard.Label.MarketStatus" />
                     </StackPanel>
                     <Border Width="1" Height="14"
                             Background="{ThemeResource MeridianBorderBrush}" />
@@ -166,13 +167,13 @@
                 <StackPanel Grid.Column="0" Spacing="2">
                     <TextBlock Style="{StaticResource SectionLabel}"
                                Text="TOTAL PORTFOLIO VALUE"
-                               CharacterSpacing="140" />
-                    <TextBlock Text="$163,842.56"
+                               CharacterSpacing="140"
+                               x:Uid="Dashboard.Label.PortfolioValue" />
+                    <TextBlock x:Name="HeroPortfolioValue"
                                FontFamily="{StaticResource InstrumentSerifFont}"
                                FontSize="62" FontWeight="Normal"
                                Foreground="{ThemeResource MeridianTextPrimaryBrush}"
-                               LineHeight="68" Margin="0,-4,0,0"
-                               AutomationProperties.Name="Portfolio value: $163,842.56" />
+                               LineHeight="68" Margin="0,-4,0,0" />
                     <StackPanel Orientation="Horizontal" Spacing="14" Margin="0,2,0,0">
                         <Border x:Name="GainPill" CornerRadius="18"
                                 Background="{ThemeResource MeridianGainBgTintBrush}"
@@ -183,23 +184,24 @@
                             </Border.RenderTransform>
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <Viewbox Width="10" Height="10" VerticalAlignment="Center">
-                                    <Polygon Points="5,0 10,8 0,8"
+                                    <Polygon x:Name="GainArrowPolygon" Points="5,0 10,8 0,8"
                                              Fill="{ThemeResource MeridianGainBrush}" />
                                 </Viewbox>
-                                <TextBlock FontFamily="{StaticResource IBMPlexMonoMediumFont}"
+                                <TextBlock x:Name="HeroGainValue"
+                                           FontFamily="{StaticResource IBMPlexMonoMediumFont}"
                                            FontSize="14"
-                                           Foreground="{ThemeResource MeridianGainBrush}"
-                                           Text="+$40,274.28" />
-                                <TextBlock FontFamily="{StaticResource IBMPlexMonoMediumFont}"
+                                           Foreground="{ThemeResource MeridianGainBrush}" />
+                                <TextBlock x:Name="HeroGainPct"
+                                           FontFamily="{StaticResource IBMPlexMonoMediumFont}"
                                            FontSize="13" Opacity="0.7"
-                                           Foreground="{ThemeResource MeridianGainBrush}"
-                                           Text="(32.63%)" />
+                                           Foreground="{ThemeResource MeridianGainBrush}" />
                             </StackPanel>
                         </Border>
                         <TextBlock Text="all time unrealized"
                                    FontSize="11" FontWeight="Medium"
                                    Foreground="{ThemeResource MeridianTextSubtleBrush}"
-                                   VerticalAlignment="Center" />
+                                   VerticalAlignment="Center"
+                                   x:Uid="Dashboard.Label.Unrealized" />
                     </StackPanel>
                 </StackPanel>
 
@@ -297,13 +299,24 @@
                                             <TextBlock x:Name="StockDelta"
                                                        FontFamily="{StaticResource IBMPlexMonoMediumFont}"
                                                        FontSize="12" VerticalAlignment="Center" />
+                                            <Button Content="DETAILS" FontSize="10" FontWeight="Bold"
+                                                    Padding="10,0" CornerRadius="6" BorderThickness="1"
+                                                    Height="22" MinHeight="0" VerticalAlignment="Center"
+                                                    BorderBrush="{ThemeResource MeridianBorderBrush}"
+                                                    Foreground="{ThemeResource MeridianTextPrimaryBrush}"
+                                                    Background="Transparent"
+                                                    Click="OnChartDetailsButtonClick"
+                                                    AutomationProperties.Name="View stock details"
+                                                    x:Uid="Dashboard.Button.ChartDetails" />
                                             <Button Content="TRADE" FontSize="10" FontWeight="Bold"
                                                     Padding="10,0" CornerRadius="6" BorderThickness="1"
                                                     Height="22" MinHeight="0" VerticalAlignment="Center"
                                                     BorderBrush="{ThemeResource MeridianAccentBrush}"
                                                     Foreground="{ThemeResource MeridianAccentBrush}"
                                                     Background="{ThemeResource MeridianAccentBgTintBrush}"
-                                                    Click="OnChartTradeButtonClick" />
+                                                    Click="OnChartTradeButtonClick"
+                                                    AutomationProperties.Name="Open trade drawer"
+                                                    x:Uid="Dashboard.Button.ChartTrade" />
                                         </StackPanel>
                                     </StackPanel>
                                 </StackPanel>
@@ -377,7 +390,8 @@
                                 Background="{ThemeResource MeridianCardBrush}"
                                 Padding="24,22" VerticalAlignment="Stretch">
                             <StackPanel Spacing="12">
-                                <TextBlock Style="{StaticResource SectionLabel}" Text="HOLDINGS" />
+                                <TextBlock Style="{StaticResource SectionLabel}" Text="HOLDINGS"
+                                                              x:Uid="Dashboard.Label.Holdings" />
                                 <ItemsRepeater ItemsSource="{Binding Holdings}">
                                     <ItemsRepeater.Layout>
                                         <StackLayout Spacing="6" />
@@ -524,7 +538,9 @@
                                  BorderThickness="0"
                                  GotFocus="OnSearchFocused"
                                  LostFocus="OnSearchUnfocused"
-                                 Style="{x:Null}" />
+                                 Style="{x:Null}"
+                                 AutomationProperties.Name="Search watchlist"
+                                 x:Uid="Dashboard.Input.Search" />
                     </Border>
 
                     <!-- ══ WATCHLIST CARD ══ -->
@@ -572,6 +588,8 @@
                                                             <TextBlock Tag="BrailleActivity" Text="⣤⣶⣷⣿⣶⣤" FontSize="9"
                                                                        Foreground="{x:Bind Pct, Converter={StaticResource GainLossBrush}}"
                                                                        Opacity="0.5"
+                                                                       Width="36"
+                                                                       TextAlignment="Center"
                                                                        VerticalAlignment="Center" />
                                                             <TextBlock Tag="Chevron" Text="▾" FontSize="8"
                                                                        Foreground="{ThemeResource MeridianTextSubtleBrush}"
@@ -694,7 +712,8 @@
                                                                 BorderBrush="{ThemeResource MeridianBorderBrush}"
                                                                 Foreground="{ThemeResource MeridianTextPrimaryBrush}"
                                                                 Background="Transparent"
-                                                                Tapped="OnViewChartFromWatchlist">
+                                                                Click="OnViewChartFromWatchlist"
+                                                                AutomationProperties.Name="View chart for this stock">
                                                             <StackPanel Orientation="Horizontal" Spacing="6">
                                                                 <FontIcon Glyph="&#xE9D9;" FontSize="12" />
                                                                 <TextBlock Text="View Chart" FontSize="11"
@@ -706,7 +725,17 @@
                                                                 BorderBrush="{ThemeResource MeridianAccentBrush}"
                                                                 Foreground="{ThemeResource MeridianAccentBrush}"
                                                                 Background="{ThemeResource MeridianAccentBgTintBrush}"
-                                                                Tapped="OnWatchlistTradeButtonTapped" />
+                                                                Click="OnWatchlistTradeButtonTapped"
+                                                                AutomationProperties.Name="Trade this stock" />
+                                                        <Button FontSize="11" Padding="14,6"
+                                                                CornerRadius="8" BorderThickness="1"
+                                                                BorderBrush="{ThemeResource MeridianBorderBrush}"
+                                                                Foreground="{ThemeResource MeridianTextPrimaryBrush}"
+                                                                Background="Transparent"
+                                                                Click="OnWatchlistDetailsButtonTapped"
+                                                                AutomationProperties.Name="View stock details">
+                                                            <TextBlock Text="Details &#x27F6;" FontSize="11" />
+                                                        </Button>
                                                     </StackPanel>
                                                 </StackPanel>
                                             </Border>
@@ -720,7 +749,7 @@
                                     Opacity="0" IsHitTestVisible="False">
                                 <Border.Background>
                                     <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                        <GradientStop Color="{StaticResource MeridianCard}" Offset="0" />
+                                        <GradientStop Color="{StaticResource MeridianCardColor}" Offset="0" />
                                         <GradientStop Color="#00FFFFFF" Offset="1" />
                                     </LinearGradientBrush>
                                 </Border.Background>
@@ -730,7 +759,7 @@
                                     Opacity="0" IsHitTestVisible="False">
                                 <Border.Background>
                                     <LinearGradientBrush StartPoint="0,1" EndPoint="0,0">
-                                        <GradientStop Color="{StaticResource MeridianCard}" Offset="0" />
+                                        <GradientStop Color="{StaticResource MeridianCardColor}" Offset="0" />
                                         <GradientStop Color="#00FFFFFF" Offset="1" />
                                     </LinearGradientBrush>
                                 </Border.Background>
@@ -768,7 +797,7 @@
                                            Text="⣤⣴⣶⣷⣿⣷⣶⣴⣤⠀⠀⠀⠀⠀⠀⠀⠀⠀"
                                            AutomationProperties.AccessibilityView="Raw" />
                             </Grid>
-                            <ItemsRepeater ItemsSource="{Binding News}">
+                            <ItemsRepeater x:Name="NewsRepeater" ItemsSource="{Binding News}">
                                 <ItemsRepeater.Layout>
                                     <StackLayout Spacing="14" />
                                 </ItemsRepeater.Layout>

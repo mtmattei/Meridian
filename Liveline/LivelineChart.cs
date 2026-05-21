@@ -177,6 +177,25 @@ public partial class LivelineChart : UserControl
             chart._canvas.CrosshairX = (float)(double)e.NewValue;
     }
 
+    public static readonly DependencyProperty BaselineYProperty =
+        DependencyProperty.Register(nameof(BaselineY), typeof(double), typeof(LivelineChart),
+            new PropertyMetadata(double.NaN, OnBaselineYChanged));
+
+    /// <summary>
+    /// Y value for the average cost baseline. NaN = hidden.
+    /// </summary>
+    public double BaselineY
+    {
+        get => (double)GetValue(BaselineYProperty);
+        set => SetValue(BaselineYProperty, value);
+    }
+
+    private static void OnBaselineYChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is LivelineChart chart)
+            chart._canvas.BaselineY = (float)(double)e.NewValue;
+    }
+
     #endregion
 
     // Keep ShowMomentum as a convenience alias

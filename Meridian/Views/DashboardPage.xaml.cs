@@ -4,6 +4,7 @@ using Meridian.Helpers;
 using Meridian.Presentation;
 using Meridian.Services;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
 
@@ -80,6 +81,7 @@ public sealed partial class DashboardPage : Page
         _finnhub = App.Services.GetRequiredService<FinnhubService>();
         DataContext = new DashboardViewModel(_marketData);
         _finnhub.QuotesUpdated += OnLiveQuotesUpdated;
+        _finnhub.NewsUpdated += OnLiveNewsUpdated;
 
         UpdateClock(); // Initial clock display
 
@@ -100,8 +102,24 @@ public sealed partial class DashboardPage : Page
         // Keyboard shortcuts (handledEventsToo catches Escape even from focused TextBoxes)
         AddHandler(KeyDownEvent, new KeyEventHandler(OnPageKeyDown), true);
 
+        // Pause animations when window loses focus to save CPU
+        var window = (Application.Current as App)?.MainWindow;
+        if (window != null)
+        {
+            window.Activated += OnWindowActivated;
+        }
+
         Loaded += OnPageLoaded;
         Unloaded += OnPageUnloaded;
+    }
+
+    private void OnWindowActivated(object sender, WindowActivatedEventArgs e)
+    {
+        // CoreWindowActivationState is used across Uno targets
+        if (e.WindowActivationState == Windows.UI.Core.CoreWindowActivationState.Deactivated)
+            _animationTimer.Stop();
+        else
+            _animationTimer.Start();
     }
 
     // ── Lifecycle ──────────────────────────────────────────────────────
@@ -110,8 +128,8 @@ public sealed partial class DashboardPage : Page
     {
         try
         {
-            // Card entrance animation: fade in + slide up
             AnimateCardEntrance();
+            PopulatePortfolioSummary();
 
             await LoadChartAsync(null);
             await LoadSkiaControlsAsync();
@@ -120,6 +138,42 @@ public sealed partial class DashboardPage : Page
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Page load error: {ex.Message}");
+        }
+    }
+
+    private async void PopulatePortfolioSummary()
+    {
+        try
+        {
+            var holdings = await _marketData.GetHoldingsAsync(CancellationToken.None);
+            var totalValue = holdings.Sum(h => h.MarketValue);
+            var totalCost = holdings.Sum(h => h.Shares * h.AvgCost);
+            var totalGain = totalValue - totalCost;
+            var totalPct = totalCost != 0 ? totalGain / totalCost * 100 : 0;
+            var isPositive = totalGain >= 0;
+
+            var sign = isPositive ? "+" : "";
+            HeroPortfolioValue.Text = $"${totalValue:N2}";
+            HeroPortfolioValue.SetValue(
+                AutomationProperties.NameProperty,
+                $"Portfolio value: ${totalValue:N2}");
+            HeroGainValue.Text = $"{sign}${Math.Abs(totalGain):N2}";
+            HeroGainPct.Text = $"({sign}{totalPct:N2}%)";
+
+            var gainBrush = isPositive
+                ? (SolidColorBrush)Application.Current.Resources["MeridianGainBrush"]
+                : (SolidColorBrush)Application.Current.Resources["MeridianLossBrush"];
+            var gainBg = isPositive
+                ? (SolidColorBrush)Application.Current.Resources["MeridianGainBgTintBrush"]
+                : (SolidColorBrush)Application.Current.Resources["MeridianLossBgTintBrush"];
+            HeroGainValue.Foreground = gainBrush;
+            HeroGainPct.Foreground = gainBrush;
+            GainArrowPolygon.Fill = gainBrush;
+            GainPill.Background = gainBg;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Portfolio summary error: {ex.Message}");
         }
     }
 
@@ -161,6 +215,11 @@ public sealed partial class DashboardPage : Page
         _finnhub.Stop();
         _brailleActivityBlocks.Clear();
         _brailleBlocksCached = false;
+        _cardLiftCache.Clear();
+
+        var window = (Application.Current as App)?.MainWindow;
+        if (window != null)
+            window.Activated -= OnWindowActivated;
     }
 
     private async Task LoadSkiaControlsAsync()
@@ -171,12 +230,13 @@ public sealed partial class DashboardPage : Page
         var volume = await _marketData.GetVolumeAsync(CancellationToken.None);
         VolumeChart.VolumeData = volume.ToList();
 
-        // Pre-load sparkline data for watchlist rows (deferred to let ItemsRepeater render)
-        DispatcherQueue.TryEnqueue(async () =>
+        // Load sparkline data once ItemsRepeater has materialized children
+        void OnLayoutReady(object? s, object e)
         {
-            await Task.Delay(200); // Wait for ItemsRepeater to materialize
-            await PopulateSparklines();
-        });
+            this.LayoutUpdated -= OnLayoutReady;
+            _ = PopulateSparklines();
+        }
+        this.LayoutUpdated += OnLayoutReady;
     }
 
     private async Task PopulateSparklines()
@@ -460,6 +520,15 @@ public sealed partial class DashboardPage : Page
         });
     }
 
+    private void OnLiveNewsUpdated(IReadOnlyList<NewsItem> news)
+    {
+        // Called from Finnhub when news arrives — update Market Pulse on UI thread
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            NewsRepeater.ItemsSource = news;
+        });
+    }
+
     private void UpdateTickerScroll()
     {
         InitTickerTape();
@@ -563,10 +632,11 @@ public sealed partial class DashboardPage : Page
         {
             _currentChartTicker = ticker;
 
-            var points = string.IsNullOrEmpty(ticker)
+            var allPoints = string.IsNullOrEmpty(ticker)
                 ? await _marketData.GetPortfolioHistoryAsync(CancellationToken.None)
                 : await _marketData.GetStockHistoryAsync(ticker, CancellationToken.None);
 
+            var points = FilterByTimeframe(allPoints, _activeTimeframe);
             if (points.Count == 0) return;
 
             // Convert to Liveline data points
@@ -634,15 +704,17 @@ public sealed partial class DashboardPage : Page
         }
     }
 
-    // ── Holdings tap (no reflection — use dynamic) ────────────────────
+    // ── Holdings tap ──────────────────────────────────────────────────
 
     private static string? ExtractTicker(object? dataContext)
     {
-        // Try direct record types first, fall back to dynamic for MVUX proxies
+        if (dataContext is null) return null;
+        // Direct record match (non-MVUX paths)
         if (dataContext is Holding h) return h.Ticker;
         if (dataContext is Stock s) return s.Ticker;
-        try { return ((dynamic)dataContext).Ticker as string; }
-        catch { return null; }
+        // MVUX proxies don't match the original record type — use reflection
+        var prop = dataContext.GetType().GetProperty("Ticker");
+        return prop?.GetValue(dataContext) as string;
     }
 
     private async void OnHoldingTapped(object sender, TappedRoutedEventArgs e)
@@ -764,6 +836,9 @@ public sealed partial class DashboardPage : Page
 
     private void ExpandWatchlistPanel(Border panel, TextBlock? chevron)
     {
+        // Compute dynamic day-range bar from Stock data
+        UpdateDayRangeBar(panel);
+
         // Panel: fade in + slide down
         var fadeIn = new DoubleAnimation
         {
@@ -803,6 +878,38 @@ public sealed partial class DashboardPage : Page
             chevSb.Children.Add(rotate);
             chevSb.Begin();
         }
+    }
+
+    private static void UpdateDayRangeBar(Border panel)
+    {
+        var ticker = ExtractTicker(panel.DataContext);
+        if (ticker == null || panel.DataContext == null) return;
+
+        var type = panel.DataContext.GetType();
+        var ratioProp = type.GetProperty("DayRangeRatio");
+        if (ratioProp?.GetValue(panel.DataContext) is not double ratio) return;
+
+        // Find the Grid with 3 columns inside the panel (fill, dot, remainder)
+        static Grid? FindRangeGrid(DependencyObject parent)
+        {
+            var count = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChildrenCount(parent);
+            for (var i = 0; i < count; i++)
+            {
+                var child = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChild(parent, i);
+                if (child is Grid g && g.ColumnDefinitions.Count == 3
+                    && g.Height is 6)
+                    return g;
+                var found = FindRangeGrid(child);
+                if (found != null) return found;
+            }
+            return null;
+        }
+
+        var rangeGrid = FindRangeGrid(panel);
+        if (rangeGrid == null) return;
+
+        rangeGrid.ColumnDefinitions[0].Width = new GridLength(ratio, GridUnitType.Star);
+        rangeGrid.ColumnDefinitions[2].Width = new GridLength(1.0 - ratio, GridUnitType.Star);
     }
 
     private void CollapseWatchlistPanel(Border panel, TextBlock? chevron)
@@ -863,7 +970,7 @@ public sealed partial class DashboardPage : Page
         return null;
     }
 
-    private async void OnViewChartFromWatchlist(object sender, TappedRoutedEventArgs e)
+    private async void OnViewChartFromWatchlist(object sender, RoutedEventArgs e)
     {
         if (sender is FrameworkElement fe)
         {
@@ -887,9 +994,8 @@ public sealed partial class DashboardPage : Page
             OpenTradeDrawer(_currentChartTicker);
     }
 
-    private void OnWatchlistTradeButtonTapped(object sender, TappedRoutedEventArgs e)
+    private void OnWatchlistTradeButtonTapped(object sender, RoutedEventArgs e)
     {
-        e.Handled = true;
         if (sender is FrameworkElement fe)
         {
             var parent = fe;
@@ -904,6 +1010,34 @@ public sealed partial class DashboardPage : Page
                 parent = parent.Parent as FrameworkElement;
             }
         }
+    }
+
+    // ── Stock Detail navigation ────────────────────────────────────────
+
+    private void OnWatchlistDetailsButtonTapped(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement fe)
+        {
+            // Walk up the tree to find the ticker from DataContext
+            var parent = fe;
+            string? ticker = null;
+            while (parent != null && ticker == null)
+            {
+                ticker = ExtractTicker(parent.DataContext);
+                parent = parent.Parent as FrameworkElement;
+            }
+
+            if (ticker == null) return;
+
+            Frame.Navigate(typeof(StockDetailPage), ticker);
+        }
+    }
+
+    private void OnChartDetailsButtonClick(object sender, RoutedEventArgs e)
+    {
+        if (string.IsNullOrEmpty(_currentChartTicker)) return;
+
+        Frame.Navigate(typeof(StockDetailPage), _currentChartTicker);
     }
 
     // ── Hover effects ─────────────────────────────────────────────────
@@ -1007,6 +1141,9 @@ public sealed partial class DashboardPage : Page
         }
     }
 
+    // Cached lift storyboards per card to avoid GC pressure on hover
+    private readonly Dictionary<Border, (Storyboard Sb, DoubleAnimation TransY, DoubleAnimation ScaleX, DoubleAnimation ScaleY)> _cardLiftCache = new();
+
     private void AnimateCardLift(Border card, bool lifting)
     {
         if (card.RenderTransform is not CompositeTransform)
@@ -1015,38 +1152,37 @@ public sealed partial class DashboardPage : Page
             card.RenderTransform = new CompositeTransform();
         }
 
-        var translateAnim = new DoubleAnimation
+        if (!_cardLiftCache.TryGetValue(card, out var cached))
         {
-            To = lifting ? -3 : 0,
-            Duration = new Duration(TimeSpan.FromMilliseconds(300)),
-            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-        };
-        Storyboard.SetTarget(translateAnim, card);
-        Storyboard.SetTargetProperty(translateAnim, "(UIElement.RenderTransform).(CompositeTransform.TranslateY)");
+            var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
+            var dur = new Duration(TimeSpan.FromMilliseconds(300));
 
-        var scaleX = new DoubleAnimation
-        {
-            To = lifting ? 1.008 : 1.0,
-            Duration = new Duration(TimeSpan.FromMilliseconds(300)),
-            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-        };
-        Storyboard.SetTarget(scaleX, card);
-        Storyboard.SetTargetProperty(scaleX, "(UIElement.RenderTransform).(CompositeTransform.ScaleX)");
+            var translateAnim = new DoubleAnimation { Duration = dur, EasingFunction = ease };
+            Storyboard.SetTarget(translateAnim, card);
+            Storyboard.SetTargetProperty(translateAnim, "(UIElement.RenderTransform).(CompositeTransform.TranslateY)");
 
-        var scaleY = new DoubleAnimation
-        {
-            To = lifting ? 1.008 : 1.0,
-            Duration = new Duration(TimeSpan.FromMilliseconds(300)),
-            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-        };
-        Storyboard.SetTarget(scaleY, card);
-        Storyboard.SetTargetProperty(scaleY, "(UIElement.RenderTransform).(CompositeTransform.ScaleY)");
+            var scaleXAnim = new DoubleAnimation { Duration = dur, EasingFunction = ease };
+            Storyboard.SetTarget(scaleXAnim, card);
+            Storyboard.SetTargetProperty(scaleXAnim, "(UIElement.RenderTransform).(CompositeTransform.ScaleX)");
 
-        var sb = new Storyboard();
-        sb.Children.Add(translateAnim);
-        sb.Children.Add(scaleX);
-        sb.Children.Add(scaleY);
-        sb.Begin();
+            var scaleYAnim = new DoubleAnimation { Duration = dur, EasingFunction = ease };
+            Storyboard.SetTarget(scaleYAnim, card);
+            Storyboard.SetTargetProperty(scaleYAnim, "(UIElement.RenderTransform).(CompositeTransform.ScaleY)");
+
+            var sb = new Storyboard();
+            sb.Children.Add(translateAnim);
+            sb.Children.Add(scaleXAnim);
+            sb.Children.Add(scaleYAnim);
+
+            cached = (sb, translateAnim, scaleXAnim, scaleYAnim);
+            _cardLiftCache[card] = cached;
+        }
+
+        cached.TransY.To = lifting ? -3 : 0;
+        cached.ScaleX.To = lifting ? 1.008 : 1.0;
+        cached.ScaleY.To = lifting ? 1.008 : 1.0;
+        cached.Sb.Stop();
+        cached.Sb.Begin();
     }
 
     private void UpdateClock()
@@ -1408,6 +1544,9 @@ public sealed partial class DashboardPage : Page
         _activeTimeframe = tf;
         UpdateTimeframeStyles();
         AnimateTimeframeInk(btn);
+
+        // Reload chart with new timeframe filter
+        _ = LoadChartAsync(_currentChartTicker);
     }
 
     private void UpdateTimeframeStyles()
@@ -1494,6 +1633,11 @@ public sealed partial class DashboardPage : Page
         SearchFocusRing.BorderBrush = DefaultBorderBrush;
         SearchFocusRing.BorderThickness = new Thickness(1);
     }
+
+    // ── Timeframe Filter ─────────────────────────────────────────────
+
+    private static IImmutableList<ChartPoint> FilterByTimeframe(IImmutableList<ChartPoint> points, string timeframe)
+        => ChartHelper.FilterByTimeframe(points, timeframe);
 
     // ── Keyboard Shortcuts ───────────────────────────────────────────
 

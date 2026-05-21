@@ -1,7 +1,7 @@
 using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Media;
 
-namespace Meridian.Presentation;
+namespace Meridian.Converters;
 
 public sealed class GainLossBrushConverter : IValueConverter
 {

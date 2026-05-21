@@ -1,6 +1,6 @@
 using Microsoft.UI.Xaml.Data;
 
-namespace Meridian.Presentation;
+namespace Meridian.Converters;
 
 /// <summary>
 /// Formats a value with prefix and/or suffix. Parameter format: "prefix|suffix"

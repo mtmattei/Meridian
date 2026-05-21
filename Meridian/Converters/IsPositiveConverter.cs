@@ -1,6 +1,6 @@
 using Microsoft.UI.Xaml.Data;
 
-namespace Meridian.Presentation;
+namespace Meridian.Converters;
 
 public sealed class IsPositiveConverter : IValueConverter
 {

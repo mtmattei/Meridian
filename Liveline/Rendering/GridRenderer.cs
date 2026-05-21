@@ -54,16 +54,19 @@ public static class GridRenderer
             canvas.DrawText(label, right + 6f, y + 4f, SKTextAlign.Left, textFont, textPaint);
         }
 
-        // X-axis time labels
+        // X-axis time labels (smart format based on data range)
         if (times.Length >= 2)
         {
+            var span = times[^1] - times[0];
+            string fmt = span.TotalDays > 1 ? "MMM d" : "h:mm tt";
+
             int labelCount = Math.Max(2, (int)(chartWidth / 80));
             int stepIdx = Math.Max(1, (times.Length - 1) / (labelCount - 1));
 
             for (int i = 0; i < times.Length; i += stepIdx)
             {
                 float x = left + (float)i / (times.Length - 1) * chartWidth;
-                string timeLabel = times[i].ToString("mm:ss");
+                string timeLabel = times[i].ToString(fmt);
                 float tw = textFont.MeasureText(timeLabel);
 
                 // Clamp so labels stay inside the chart area

@@ -46,4 +46,22 @@
         <Setter Property="Foreground" Value="{StaticResource MeridianTextPrimaryBrush}" />
     </Style>
 
+    <!-- Metadata label: 12px Outfit, muted (About card) -->
+    <Style x:Key="MetaLabel" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource OutfitFont}" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="Foreground" Value="{StaticResource MeridianTextMutedBrush}" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <!-- Metadata value: 13px Outfit, text primary (About card) -->
+    <Style x:Key="MetaValue" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource OutfitFont}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="Foreground" Value="{StaticResource MeridianTextPrimaryBrush}" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
 </ResourceDictionary>

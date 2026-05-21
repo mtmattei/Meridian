@@ -32,6 +32,7 @@ public class LivelineChartCanvas : SKCanvasElement
     private const int BreathingPointCount = 60;
     private float _fillOpacity = 1.0f;
     private float _crosshairX = float.NaN;
+    private float _baselineY = float.NaN;
 
     /// <summary>
     /// Multiplier for fill gradient top alpha (1.0 = default, higher = denser).
@@ -49,6 +50,15 @@ public class LivelineChartCanvas : SKCanvasElement
     {
         get => _crosshairX;
         set { _crosshairX = value; Invalidate(); }
+    }
+
+    /// <summary>
+    /// Y value for the average cost baseline. NaN = hidden.
+    /// </summary>
+    public float BaselineY
+    {
+        get => _baselineY;
+        set { _baselineY = value; Invalidate(); }
     }
 
     public void UpdateState(
@@ -160,6 +170,10 @@ public class LivelineChartCanvas : SKCanvasElement
         // 2. Horizontal tracking line at the live dot Y
         double liveDotY = _lerp.CurrentY[^1];
         GridRenderer.DrawTrackingLine(canvas, w, h, liveDotY, minY, maxY, _palette);
+
+        // 2b. Average cost baseline
+        if (!float.IsNaN(_baselineY))
+            BaselineRenderer.Draw(canvas, w, h, _baselineY, minY, maxY, _palette);
 
         // 3. Line + fill (apply Weight Whisper fill opacity modifier)
         var renderPalette = _fillOpacity == 1.0f ? _palette : _palette with

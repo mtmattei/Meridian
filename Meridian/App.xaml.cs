@@ -13,8 +13,7 @@ public partial class App : Application
     }
 
     public static IServiceProvider Services { get; private set; } = null!;
-
-    protected Window? MainWindow { get; private set; }
+    public new Window? MainWindow { get; private set; }
     protected IHost? Host { get; private set; }
 
     [SuppressMessage("Trimming", "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code", Justification = "Uno.Extensions APIs are used in a way that is safe for trimming in this template context.")]
@@ -37,13 +36,9 @@ public partial class App : Application
                 .ConfigureServices((context, services) =>
                 {
                     services.AddSingleton<IMarketDataService, MockMarketDataService>();
+                    var apiKey = Environment.GetEnvironmentVariable("FINNHUB_API_KEY") ?? "";
                     services.AddSingleton(sp =>
-                    {
-                        var key = Environment.GetEnvironmentVariable("FINNHUB_API_KEY")
-                            ?? "d6u0709r01qjm9brvoigd6u0709r01qjm9brvoj0";
-                        return new FinnhubService(key,
-                            ["AAPL", "NVDA", "MSFT", "GOOGL", "META", "TSLA"]);
-                    });
+                        new FinnhubService(apiKey, ["AAPL", "NVDA", "MSFT", "GOOGL", "META", "TSLA"]));
                 })
             );
         MainWindow = builder.Window;

@@ -22,7 +22,29 @@
       "mcp__uno-app__uno_app_visualtree_snapshot",
       "mcp__uno-app__uno_app_close",
       "mcp__uno-app__uno_app_pointer_click",
-      "WebFetch(domain:finnhub.io)"
+      "WebFetch(domain:finnhub.io)",
+      "Bash(taskkill /f /pid 25064)",
+      "Bash(taskkill /f /im Meridian.exe)",
+      "Bash(cd:*)",
+      "mcp__claude_ai_uno__uno_platform_docs_search",
+      "mcp__claude_ai_uno__uno_platform_docs_fetch",
+      "mcp__claude_ai_Microsoft_Learn__microsoft_docs_search",
+      "Bash(xargs grep:*)",
+      "mcp__uno-app__uno_app_type_text",
+      "Bash(taskkill /F /IM Meridian.exe)",
+      "Bash(taskkill /F /PID 21708)",
+      "Bash(taskkill /F /PID 13080)",
+      "Bash(tasklist)",
+      "mcp__uno-app__uno_app_key_press",
+      "mcp__claude_ai_uno__uno_platform_agent_rules_init",
+      "mcp__claude_ai_uno__uno_platform_usage_rules_init",
+      "Bash(taskkill //F //IM Meridian.exe)",
+      "Bash(done)",
+      "Bash(for f:*)",
+      "Bash(do mv:*)",
+      "Bash(taskkill /F /IM dotnet.exe)",
+      "mcp__uno-app__uno_app_element_peer_default_action",
+      "Bash(powershell *)"
     ]
   }
 }

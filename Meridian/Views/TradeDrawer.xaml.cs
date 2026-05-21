@@ -97,7 +97,7 @@ public sealed partial class TradeDrawer : UserControl
         QuantityInput.Focus(FocusState.Programmatic);
     }
 
-    public void SetStock(Stock stock)
+    public void SetStock(Stock stock, bool isSell = false, int prefillQty = 0)
     {
         _stock = stock;
         StockTicker.Text = stock.Ticker;
@@ -112,10 +112,10 @@ public sealed partial class TradeDrawer : UserControl
             : new SolidColorBrush(Windows.UI.Color.FromArgb(0x18, 0xB5, 0x34, 0x2B));
 
         // Reset form state
-        _isBuy = true;
+        _isBuy = !isSell;
         _orderType = "market";
-        QuantityInput.Text = "";
-        SetSide(true);
+        QuantityInput.Text = prefillQty > 0 ? prefillQty.ToString() : "";
+        SetSide(!isSell);
         SetOrderType("market");
         FormPanel.Visibility = Visibility.Visible;
         ConfirmationPanel.Visibility = Visibility.Collapsed;

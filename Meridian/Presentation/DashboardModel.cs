@@ -23,6 +23,17 @@ public partial record DashboardModel(IMarketDataService MarketData)
     public IListFeed<NewsItem> News => ListFeed.Async(MarketData.GetNewsAsync);
     public IFeed<IImmutableList<ChartPoint>> PortfolioHistory => Feed.Async(MarketData.GetPortfolioHistoryAsync);
 
+    // Portfolio summary computed from holdings
+    public IFeed<PortfolioSummary> Summary => Feed.Async(async ct =>
+    {
+        var holdings = await MarketData.GetHoldingsAsync(ct);
+        var totalValue = holdings.Sum(h => h.MarketValue);
+        var totalCost = holdings.Sum(h => h.Shares * h.AvgCost);
+        var totalGain = totalValue - totalCost;
+        var totalPct = totalCost != 0 ? totalGain / totalCost * 100 : 0;
+        return new PortfolioSummary(totalValue, totalGain, totalPct, totalGain >= 0);
+    });
+
     // Index tickers (sync → async wrapper)
     public IListFeed<IndexTicker> IndexTickers =>
         ListFeed.Async(async ct => MarketData.GetIndexTickers());

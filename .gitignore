@@ -487,3 +487,12 @@ $RECYCLE.BIN/
 solution-config.props
 # Publish Profiles
 !**/Properties/PublishProfiles/*.pubxml
+
+# Local Claude Code per-folder settings (per-clone, never share)
+**/.claude/settings.local.json
+
+# Screen recordings / large media (never commit)
+*.mp4
+*.mov
+*.webm
+raw-screen-*
