@@ -1,0 +1,436 @@
+<title>Meridian Repositioning Brief</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=Figtree:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+:root{
+  --paper:#F4F6F7; --card:#FFFFFF; --ink:#111B29; --ink-2:#3B4757; --muted:#66717F;
+  --rule:#D8DEE3; --mark:#FFD23F; --mark-ink:#111B29; --good:#1E7A5F; --bad:#B8422E; --accent:#1B4FD8;
+  --shadow:0 1px 2px rgba(17,27,41,.06), 0 8px 24px rgba(17,27,41,.06);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0F1620; --card:#161F2B; --ink:#EEF2F6; --ink-2:#C4CCD6; --muted:#8B96A3;
+    --rule:#2A3542; --mark:#E9C231; --mark-ink:#0F1620; --good:#4FC79B; --bad:#F08B76; --accent:#7EA2FF;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.3);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0F1620; --card:#161F2B; --ink:#EEF2F6; --ink-2:#C4CCD6; --muted:#8B96A3;
+  --rule:#2A3542; --mark:#E9C231; --mark-ink:#0F1620; --good:#4FC79B; --bad:#F08B76; --accent:#7EA2FF;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.3);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:16px;line-height:1.6}
+h1,h2,h3,h4{font-family:"Schibsted Grotesk","Figtree",system-ui,sans-serif;line-height:1.15;text-wrap:balance;margin:0}
+h1{font-size:clamp(2rem,4vw,2.9rem);font-weight:800;letter-spacing:-.02em}
+h2{font-size:1.65rem;font-weight:700;letter-spacing:-.015em;margin-top:.25rem}
+h3{font-size:1.15rem;font-weight:700;margin-bottom:.35rem}
+h4{font-size:1rem;font-weight:700}
+p{margin:0 0 1rem;max-width:68ch}
+ul,ol{margin:0 0 1rem;padding-left:1.25rem;max-width:72ch}
+li{margin-bottom:.35rem}
+li p{margin:0}
+a{color:var(--accent)}
+mark{background:var(--mark);color:var(--mark-ink);padding:0 .2em;border-radius:2px}
+small,.eyebrow{font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.wrap{display:grid;grid-template-columns:220px minmax(0,1fr);gap:48px;max-width:1160px;margin:0 auto;padding:40px 28px 96px}
+@media (max-width:900px){.wrap{grid-template-columns:1fr;gap:24px}}
+nav.toc{position:sticky;top:24px;align-self:start;font-size:.9rem}
+nav.toc ol{list-style:none;padding:0;margin:0;border-left:2px solid var(--rule)}
+nav.toc li{margin:0}
+nav.toc a{display:block;padding:5px 12px;color:var(--ink-2);text-decoration:none;border-left:2px solid transparent;margin-left:-2px}
+nav.toc a:hover{border-left-color:var(--mark);color:var(--ink)}
+@media (max-width:900px){nav.toc{position:static}nav.toc ol{display:flex;flex-wrap:wrap;gap:4px;border:0}nav.toc a{border:1px solid var(--rule);border-radius:999px;padding:4px 10px}}
+header.title{margin-bottom:40px;padding-bottom:28px;border-bottom:1px solid var(--rule)}
+header.title p.lede{font-size:1.15rem;color:var(--ink-2);max-width:60ch;margin-top:12px}
+section{margin-bottom:56px;scroll-margin-top:24px}
+section>h2{padding-top:8px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin:16px 0 20px}
+.card{background:var(--card);border:1px solid var(--rule);border-radius:10px;padding:18px 20px}
+.card h3{margin-bottom:6px}
+.card p:last-child,.card ul:last-child{margin-bottom:0}
+.callout{background:var(--card);border-left:4px solid var(--mark);padding:16px 20px;border-radius:0 8px 8px 0;margin:16px 0 20px;box-shadow:var(--shadow)}
+.callout p:last-child{margin:0}
+.decision{display:grid;grid-template-columns:110px 1fr;gap:4px 14px;font-size:.95rem;background:var(--card);border:1px solid var(--rule);border-radius:10px;padding:14px 18px;margin:12px 0 20px;max-width:76ch}
+.decision b{color:var(--muted);font-weight:600;font-size:.8rem;letter-spacing:.06em;text-transform:uppercase;padding-top:3px}
+table{border-collapse:collapse;width:100%;font-size:.93rem;margin:12px 0 20px;background:var(--card);border:1px solid var(--rule);border-radius:10px;overflow:hidden}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-size:.78rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+tr:last-child td{border-bottom:0}
+td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+.tablewrap{overflow-x:auto}
+.copy{background:var(--card);border:1px solid var(--rule);border-radius:10px;padding:20px 24px;margin:12px 0 24px;max-width:78ch}
+.copy .label{font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:4px}
+.copy .h{font-family:"Schibsted Grotesk",sans-serif;font-weight:700;font-size:1.25rem;line-height:1.25;margin:0 0 10px;letter-spacing:-.01em}
+.copy p{margin-bottom:.75rem}
+.copy .btn{display:inline-block;background:var(--ink);color:var(--paper);padding:8px 14px;border-radius:6px;font-weight:600;font-size:.9rem;margin:4px 8px 4px 0}
+.copy .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--rule)}
+.was{color:var(--bad)} .now{color:var(--good)}
+.diff{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0 20px}
+@media (max-width:700px){.diff{grid-template-columns:1fr}}
+.diff>div{background:var(--card);border:1px solid var(--rule);border-radius:10px;padding:14px 16px;font-size:.95rem}
+.diff .tag{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;font-weight:700;margin-bottom:6px}
+.pill{display:inline-block;font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:999px;border:1px solid var(--rule);color:var(--ink-2);margin-right:6px}
+.pill.hi{background:var(--mark);color:var(--mark-ink);border-color:transparent}
+.score{display:inline-block;min-width:3.2em;font-variant-numeric:tabular-nums;font-weight:700}
+.tree{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.85rem;line-height:1.55;background:var(--card);border:1px solid var(--rule);border-radius:10px;padding:16px 20px;white-space:pre;overflow-x:auto;margin:12px 0 20px}
+.note{font-size:.9rem;color:var(--muted)}
+</style>
+
+<div class="wrap">
+<nav class="toc" aria-label="Contents">
+<ol>
+<li><a href="#verdict">The verdict</a></li>
+<li><a href="#today">What the site says today</a></li>
+<li><a href="#positioning">Positioning</a></li>
+<li><a href="#offer">The offer</a></li>
+<li><a href="#ia">Information architecture</a></li>
+<li><a href="#copy">Homepage copy</a></li>
+<li><a href="#conversion">Conversion fixes</a></li>
+<li><a href="#design">Design brief</a></li>
+<li><a href="#interaction">Interaction brief</a></li>
+<li><a href="#traffic">Traffic</a></li>
+<li><a href="#plan">Implementation plan</a></li>
+<li><a href="#questions">Unresolved questions</a></li>
+</ol>
+</nav>
+
+<main>
+<header class="title">
+<div class="eyebrow">meridianflow.ca · September 2026</div>
+<h1>Meridian Repositioning Brief</h1>
+<p class="lede">How to turn a site that says "we build AI agents" into one where a non-technical business owner thinks: I understand what this is, I can see how it helps my business, and I know what to do next.</p>
+<p class="note">Source note: the live site could not be fetched from the sandbox used to write this brief, so the "today" analysis is reconstructed from search-engine caches of the homepage and the audit blog post. Anything that depends on a detail those caches did not contain is called out in Unresolved Questions.</p>
+</header>
+
+<section id="verdict">
+<h2>The verdict</h2>
+<p>The site has the right raw materials and the wrong frame. The real offer is a practitioner who finds a business's repetitive work and builds AI that does it inside the tools they already use, with a paid audit as the on-ramp. What the site leads with instead is vendor vocabulary: "AI implementation studio", "agents", "knowledge base", "virtual employee". Four nouns for one service, and none of them is the customer's noun.</p>
+<div class="callout">
+<p><b>Three changes carry most of the value.</b></p>
+<ol>
+<li><b>Lead with the work, not the technology.</b> The headline names what gets handed off (quotes, follow-ups, data entry, reporting), the tools it happens in, and how long it takes. "Agents" and "virtual employees" become supporting language, or go.</li>
+<li><b>Make the ladder visible: Find, Build, Run.</b> Free 30-minute fit call → Workflow Audit ($2,500, 2 weeks) → Workflow Build (fixed price, one workflow at a time) → optional Care. Today the audit lives only in a blog post and the price is hidden.</li>
+<li><b>Repair the only conversion path.</b> The contact form is broken, so the site's lead rate is effectively zero regardless of copy. Replace it with a calendar booking plus a three-field form and a visible email address.</li>
+</ol>
+</div>
+<p>The memorable phrase to build the brand around: <mark>The repetitive work, handled.</mark> The structural phrase: <mark>One workflow at a time.</mark></p>
+</section>
+
+<section id="today">
+<h2>What the site says today, and why it under-converts</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>What the site says</th><th>What a business owner hears</th><th>The problem</th></tr></thead>
+<tbody>
+<tr><td>"Meridian · Agents &amp; AI Workflows"</td><td>Something for developers.</td><td>Category label in insider vocabulary. Zero outcome.</td></tr>
+<tr><td>"Montreal-based AI implementation studio. We build AI agents that know your business, use your tools, and handle the work your team shouldn't have to."</td><td>"Studio" sounds like design or video. "Agents" is undefined. The last clause is the only part that lands.</td><td>The one good phrase is buried at the end of a sentence that starts with your identity, not their problem.</td></tr>
+<tr><td>"Virtual employees for the 99 percent of companies that don't have an AI team."</td><td>Am I hiring a robot? Is this going to replace someone?</td><td>Defines the audience by what they lack. "Virtual employee" is also the phrase every AI agency adopted in 2025, so it no longer differentiates.</td></tr>
+<tr><td>"Collect everything into a knowledge base, build the agent, it gets smarter over time. One system rather than a pile of automations."</td><td>Sounds like a big project. What is a knowledge base? Smarter how?</td><td>This is your build process (capability), not their outcome. The "pile of automations" contrast only means something to someone who already bought the pile.</td></tr>
+<tr><td>Audit: $2,500, 1–2 weeks, in the blog only.</td><td>Most visitors never see it.</td><td>Your best-designed entry offer is off the homepage, and the price appears nowhere a buyer looks.</td></tr>
+<tr><td>One testimonial (MP Cutting Tools), no numbers. No founder.</td><td>Who am I actually hiring?</td><td>A solo studio's strongest credibility asset is the person. It is absent.</td></tr>
+<tr><td>Contact form: broken.</td><td>Nothing.</td><td>Every dollar spent on traffic ends in a dead form.</td></tr>
+</tbody></table></div>
+
+<h3>Section scores (estimated against a lead-capture landing page)</h3>
+<p class="note">Scores follow the seven-section conversion framework, weighted by how much each section contributes to a lead. Estimated from cached copy, so treat them as directional.</p>
+<div class="tablewrap"><table>
+<thead><tr><th>Section</th><th>Weight</th><th>Today</th><th>Key issue</th></tr></thead>
+<tbody>
+<tr><td>Hero</td><td class="num">25%</td><td class="num"><span class="score">40</span></td><td>Identity-first headline; no outcome, no time frame, no visible price or proof.</td></tr>
+<tr><td>Value proposition</td><td class="num">20%</td><td class="num"><span class="score">45</span></td><td>Explains how you build, not what changes for them. Audience defined negatively.</td></tr>
+<tr><td>Social proof</td><td class="num">15%</td><td class="num"><span class="score">30</span></td><td>One quote, no numbers, no name or role, no founder.</td></tr>
+<tr><td>Features and benefits</td><td class="num">15%</td><td class="num"><span class="score">40</span></td><td>Tool logos and process steps stand in for concrete examples of work.</td></tr>
+<tr><td>Objection handling</td><td class="num">10%</td><td class="num"><span class="score">20</span></td><td>No FAQ. Data safety, "what if it's wrong", cost to run, and "do we need IT" go unanswered.</td></tr>
+<tr><td>Call to action</td><td class="num">10%</td><td class="num"><span class="score">15</span></td><td>"Discovery call" is fine copy, but the path to it is broken.</td></tr>
+<tr><td>Footer</td><td class="num">5%</td><td class="num"><span class="score">40</span></td><td>No final CTA or direct contact recovered.</td></tr>
+<tr><td><b>Overall</b></td><td></td><td class="num"><span class="score"><b>36</b></span></td><td>Realistic target after the rewrite: 70+. Typical consultation-booking pages convert 5–10% of qualified visitors.</td></tr>
+</tbody></table></div>
+
+<h3>A brand problem worth naming</h3>
+<p>"Meridian" is crowded in AI: a funded agentic-spreadsheet startup, a private-equity CRM, an accounting AI product, and a "Meridian Flow Inc" doing AI e-commerce automation. "Meridian flow" itself is a Traditional Chinese Medicine term, so search for the name returns acupuncture clinics. Brand search will not find you. This brief does not recommend renaming now. It does recommend that the founder's name and the phrase "AI workflows for small business, Montréal" carry the findability, and that the rename question be decided deliberately (see Unresolved Questions).</p>
+</section>
+
+<section id="positioning">
+<h2>Positioning</h2>
+<div class="decision">
+<b>Category</b><span>Done-for-you AI workflows for small teams. Plain and immediately understandable. "AI implementation studio" is strategic-but-needs-explaining; "agents" is too close to generic AI tooling.</span>
+<b>Audience</b><span>Primary: the owner, general manager, or operations lead of a 5–100 person business in Montréal, Québec, and English-speaking North America. The person who signs payroll and feels the hours. Secondary: the office manager or ops person who will actually use the workflow.</span>
+<b>Problem</b><span>In their words: "We pay good people to copy-paste between systems, chase follow-ups, and answer the same questions. I know AI could help. Someone tried ChatGPT and it didn't stick. I don't know what to automate first, which tool, or who would set it up, and I can't babysit a project."</span>
+<b>Alternatives</b><span>Do nothing and hire another admin. Buy a SaaS with "AI" in the name. Ad-hoc ChatGPT or Copilot use. A Zapier freelancer. A large agency at large-agency prices. A relative who "knows computers".</span>
+<b>Promise</b><span>We find the repetitive work eating your team's week and build AI that does it inside the tools you already use. Fixed scope, fixed price, one workflow at a time.</span>
+<b>Remember</b><span>The repetitive work, handled.</span>
+</div>
+
+<h3>Differentiation you can actually back up</h3>
+<div class="grid2">
+<div class="card"><h3>Practitioner, not reseller</h3><p>The founder uses these workflows daily in their own work. Clients get what the builder uses, not a template bought from a course. Proof: show your own workflows on the About page.</p></div>
+<div class="card"><h3>Map before build</h3><p>The audit scores every candidate task and says what to leave alone. "Which tool to buy" comes last, on purpose. Proof: a redacted one-page roadmap sample.</p></div>
+<div class="card"><h3>Inside their tools</h3><p>Gmail or Outlook, Slack or Teams, HubSpot, QuickBooks, Excel. No new login, no dashboard. Proof: screenshots of a drafted reply sitting in a real inbox.</p></div>
+<div class="card"><h3>Fixed price, one workflow at a time</h3><p>Small businesses fear open-ended IT projects. A priced, scoped, four-week unit removes that fear. Proof: pricing on the page.</p></div>
+<div class="card"><h3>They own it</h3><p>Built in their accounts, documented, no retainer required. Proof: the Care plan is optional and says so.</p></div>
+<div class="card"><h3>Local and bilingual</h3><p>Montréal, on-site when useful, service in French and English. A real advantage over US agencies for Québec businesses. Proof: a French version of the site.</p></div>
+</div>
+
+<div class="decision">
+<b>Decision</b><span>Demote "virtual employee" from primary framing to an optional aside in the Build tier.</span>
+<b>Reason</b><span>It is now generic (every AI agency uses it), it overclaims ("handles the full pipeline"), and it makes some owners think about replacing staff rather than relieving them. "Workflow" is the noun the user actually described their expertise in.</span>
+<b>Tradeoff</b><span>"Virtual employee" is vivid and easy to repeat. If it tested well with real prospects, keep it as the Build tier's nickname ("some clients call it their virtual employee") without leading with it.</span>
+</div>
+
+<h3>Claims to retire</h3>
+<div class="tablewrap"><table>
+<thead><tr><th>Retire</th><th>Use instead</th></tr></thead>
+<tbody>
+<tr><td>"AI implementation studio"</td><td>"We build AI workflows for small teams."</td></tr>
+<tr><td>"AI agents that know your business"</td><td>"AI that drafts, sorts, and enters the work your team keeps redoing."</td></tr>
+<tr><td>"Gets smarter over time"</td><td>"We tune it for 30 days after launch, then it runs on its own."</td></tr>
+<tr><td>"For the 99% without an AI team"</td><td>"For 5–100 person businesses."</td></tr>
+<tr><td>"Handles the full pipeline"</td><td>"Handles the research and the first draft. Your rep reviews and sends."</td></tr>
+<tr><td>"Discovery call"</td><td>"Fit call: 30 minutes, you leave with 2–3 tasks worth automating."</td></tr>
+</tbody></table></div>
+</section>
+
+<section id="offer">
+<h2>The offer: Find, Build, Run</h2>
+<p>This is the same ladder the site half-describes today, made explicit, priced, and named. Numbers marked <span class="pill">proposal</span> are suggestions to confirm against your margins; the $2,500 audit is already public.</p>
+<div class="tablewrap"><table>
+<thead><tr><th>Step</th><th>What it is</th><th>Time</th><th>Price</th><th>What they walk away with</th></tr></thead>
+<tbody>
+<tr><td><b>Fit call</b></td><td>30 minutes on video. You ask how the work happens, they tell you what annoys them.</td><td class="num">30 min</td><td class="num">Free</td><td>2–3 named tasks worth automating, and an honest "yes this fits" or "no, do X instead".</td></tr>
+<tr><td><b>Find</b> · Workflow Audit</td><td>Screen shares and 3–5 conversations with the people doing the work. Every candidate task scored on hours, error cost, and buildability.</td><td class="num">2 weeks</td><td class="num">$2,500 <span class="note">credited to first build</span></td><td>A one-page roadmap: build first, cost, savings, leave alone. Theirs to keep even if they never build.</td></tr>
+<tr><td><b>Build</b> · Workflow Build</td><td>One workflow, fixed scope, in their accounts. Human check before anything goes out. Team training included.</td><td class="num">3–4 weeks</td><td class="num">From $5,000 <span class="pill">proposal</span></td><td>A running workflow, documentation, 30 days of tuning.</td></tr>
+<tr><td><b>Run</b> · Care</td><td>Monitoring, fixes when a connected tool changes, and the next workflow when they are ready. Optional.</td><td class="num">Monthly</td><td class="num">From $500/mo <span class="pill">proposal</span></td><td>Someone who answers when it breaks. Cancel any month.</td></tr>
+</tbody></table></div>
+<div class="callout">
+<p><b>Why the ladder converts better than "book a discovery call".</b> A non-technical owner cannot evaluate "AI agents". They can evaluate "$2,500, two weeks, a roadmap I keep". The audit is a small, reversible decision that builds the trust the build needs. Crediting the audit toward the build removes the "am I paying twice" objection and pulls the buyer forward.</p>
+</div>
+<h3>Guarantees to consider</h3>
+<ul>
+<li><b>Audit:</b> "If the audit finds nothing worth building, we say so, and you keep the roadmap." Cheap to offer; you would say it anyway.</li>
+<li><b>Build:</b> "We keep tuning until it does what we agreed in the spec, or the last milestone is free." Confirms fixed scope means fixed scope. Confirm you are comfortable with this before publishing.</li>
+</ul>
+</section>
+
+<section id="ia">
+<h2>Information architecture</h2>
+<p>A single long homepage does the selling. Four short supporting pages exist for people who need one more thing before booking. Every page ends in the same booking block.</p>
+<div class="tree">meridianflow.ca
+├── /                 Homepage (the sales page; section order below)
+├── /audit            The Workflow Audit in detail: what happens each day, sample roadmap, price, book
+├── /work             Case studies: MP Cutting Tools first; template for the next two
+├── /about            Founder: who you'll work with, own daily workflows, bilingual, Montréal
+├── /blog             Keep. Retitle the existing post's category to "Guides"
+├── /book             Booking page: calendar embed + three-field form + email + phone
+└── /fr               French mirror of / and /book first; the rest later</div>
+<h3>Homepage section order</h3>
+<p>The order follows how an owner decides: recognise the problem, see that the solution is concrete, see the path and the price, check the people, clear objections, act.</p>
+<ol>
+<li><b>Hero.</b> Outcome headline, tools named, time frame, primary CTA, "no pitch" microcopy, location line. Signature visual: a team's Tuesday-morning task list with rows highlighted "handed off".</li>
+<li><b>Sound familiar.</b> Three pain vignettes in the owner's language. Ends with the ChatGPT-didn't-stick line that names your actual job: the wiring.</li>
+<li><b>What we build.</b> Six concrete workflows, each Before → After → Tools. This is the section that makes AI legible to a non-technical reader.</li>
+<li><b>How it works.</b> Find, Build, Run with duration and price on each step. The numbering is honest because it is a sequence.</li>
+<li><b>Proof.</b> MP Cutting Tools with two numbers, then "Who you'll work with" (founder).</li>
+<li><b>Why Meridian.</b> The six differentiators, one line each.</li>
+<li><b>Pricing.</b> The ladder again as three columns. Transparency is a trust signal for this buyer.</li>
+<li><b>FAQ.</b> Eight objections, answered plainly.</li>
+<li><b>Book.</b> Calendar embed, fallback form, email, phone.</li>
+<li><b>Footer.</b> Montréal, FR/EN, email, LinkedIn, privacy.</li>
+</ol>
+<p>Navigation: How it works · Examples · Pricing · About · Blog, plus a persistent "Book a free fit call" button. Five links, all anchoring into the homepage except About and Blog.</p>
+</section>
+
+<section id="copy">
+<h2>Homepage copy</h2>
+<p>Full draft. The prototype page renders all of it. Brackets mark facts only you can supply.</p>
+
+<div class="copy">
+<div class="label">Hero</div>
+<div class="eyebrow" style="margin-bottom:8px">AI workflows for 5–100 person businesses · Montréal</div>
+<div class="h">Hand off the work your team keeps redoing.</div>
+<p>Meridian finds the repetitive tasks eating 5–20 hours of your team's week, then builds AI that does them inside Gmail, Slack, HubSpot and the rest of your stack. A plan in two weeks. A working workflow in four.</p>
+<span class="btn">Book a free 30-minute fit call</span><span class="btn ghost">See example workflows</span>
+<p class="note" style="margin-top:8px">No pitch. You leave with 2–3 tasks worth automating, whether or not we work together.</p>
+</div>
+
+<div class="diff">
+<div><div class="tag was">Before</div>"Montreal-based AI implementation studio. We build AI agents that know your business, use your tools, and handle the work your team shouldn't have to."</div>
+<div><div class="tag now">After</div>"Hand off the work your team keeps redoing." <span class="note">Why: verb first, their team as subject, outcome in eight words. The subhead carries the specifics (hours, tools, time frame) so the headline can stay short.</span></div>
+</div>
+
+<div class="copy">
+<div class="label">Sound familiar</div>
+<div class="h">You're paying skilled people to do copy-paste work.</div>
+<p><b>Every quote starts from a blank page.</b> Sales re-types specs from an email into the CRM, then into a quote template, then into the invoice.</p>
+<p><b>Follow-ups fall through the cracks.</b> Leads go cold because nobody had time to write the third email.</p>
+<p><b>Monday morning is reporting.</b> Someone spends half a day assembling numbers that already exist in three systems.</p>
+<p>You've tried ChatGPT. It helped for an afternoon. Then everyone went back to the old way, because nobody had time to wire it into how the work actually happens. <mark>That wiring is what we do.</mark></p>
+</div>
+
+<div class="copy">
+<div class="label">What we build</div>
+<div class="h">Six workflows we build most often.</div>
+<p>Each one replaces a specific chore, runs inside your tools, and is checked by a person before anything leaves the building.</p>
+<p><b>Lead research and first outreach.</b> Before: a rep researches companies one at a time, hunts for contacts, writes each email from scratch. After: a shortlist with contacts and drafted emails lands in HubSpot every morning. The rep reviews and sends. <span class="note">HubSpot · Gmail · LinkedIn · Built for MP Cutting Tools</span></p>
+<p><b>Inbox triage and drafted replies.</b> Before: the owner spends 90 minutes a day on email. After: messages sorted by type, routine replies drafted in your voice, waiting for a click. <span class="note">Gmail or Outlook</span></p>
+<p><b>Quotes from email requests.</b> Before: specs re-typed into a spreadsheet, then into a quote. After: request in, draft quote out in your template with the right pricing and terms. You approve. <span class="note">Outlook · Excel · QuickBooks</span></p>
+<p><b>Supplier invoices and purchase orders.</b> Before: invoices keyed by hand. After: PDFs read, matched to the PO, exceptions flagged, the rest queued for approval. <span class="note">QuickBooks · Google Drive</span></p>
+<p><b>Weekly reporting.</b> Before: half a day assembling numbers. After: a Monday 7 a.m. summary in Slack with the figures and a plain-language note on what changed. <span class="note">Slack · Sheets · HubSpot</span></p>
+<p><b>Customer questions.</b> Before: the same twenty questions answered by hand. After: answers drafted from your own documents and past replies; anything unusual goes to a person. <span class="note">Gmail · your help desk</span></p>
+</div>
+
+<div class="copy">
+<div class="label">How it works</div>
+<div class="h">Find it. Build it. Run it.</div>
+<p><b>1 · Find.</b> A free 30-minute fit call, then a two-week Workflow Audit ($2,500). We watch how the work really happens, talk to the people doing it, and score every candidate. You get a one-page roadmap: what to build first, what it costs, what it saves, and what to leave alone. The audit fee is credited toward your first build.</p>
+<p><b>2 · Build.</b> One workflow, fixed scope, fixed price, three to four weeks. Built inside your accounts, with a human check before anything goes out. We train your team and tune it for 30 days.</p>
+<p><b>3 · Run.</b> Optional Care from $[500]/month: we watch it, fix what breaks when a tool changes, and add the next workflow when you're ready. Or take the documentation and run it yourself. No retainer required.</p>
+</div>
+
+<div class="copy">
+<div class="label">Proof</div>
+<div class="h">"Before Meridian, lead generation was entirely manual."</div>
+<p>"Researching companies one by one, finding contacts, writing emails from scratch. Now our virtual employee handles the full pipeline." <span class="note">[Name, role], MP Cutting Tools, industrial cutting tool distributor, Montréal</span></p>
+<p><b>[X] hours/week</b> back to the sales team · <b>[Y] outreach emails/week</b>, reviewed and sent by a person · <b>[Z] weeks</b> from audit to first send</p>
+<div class="label" style="margin-top:14px">Who you'll work with</div>
+<p><b>[Founder name], founder.</b> I've spent my career building AI workflows and agents hands-on. The tools I set up for clients are the ones I run my own work on. Meridian is me, plus a small bench of specialists when a project needs one. You get one person who understands both your business and the tooling, and who answers the phone. Service in French and English.</p>
+</div>
+
+<div class="copy">
+<div class="label">Why Meridian</div>
+<div class="h">Why businesses pick Meridian over an agency, a SaaS, or their nephew.</div>
+<p><b>Practitioner, not reseller.</b> You get what the builder uses every day.</p>
+<p><b>We map before we build.</b> The audit says what to build first and what to leave alone.</p>
+<p><b>Inside your tools.</b> No new login. No dashboard nobody opens.</p>
+<p><b>Fixed price, one workflow at a time.</b> No open-ended IT project.</p>
+<p><b>You own it.</b> Your accounts, documented, no lock-in.</p>
+<p><b>Local and bilingual.</b> Montréal. On-site when it helps. Français ou anglais.</p>
+</div>
+
+<div class="copy">
+<div class="label">FAQ</div>
+<p><b>Is our data safe?</b> Everything runs in your accounts under your permissions. We use business-tier AI plans that don't train on your data, and the roadmap lists exactly which data goes where. Nothing runs on our servers without your say.</p>
+<p><b>What happens when the AI gets it wrong?</b> Anything customer-facing gets a human check until you're comfortable removing it. Unusual cases route to a person instead of guessing.</p>
+<p><b>Do we need someone technical on staff?</b> No. If your team can use email and a spreadsheet, they can use this.</p>
+<p><b>Which tools do you work with?</b> Google Workspace, Microsoft 365, Slack, Teams, HubSpot, Pipedrive, QuickBooks, Notion, Airtable, and most things with an inbox or an API.</p>
+<p><b>What does it cost to run?</b> Typically $50–300 a month in AI and automation subscriptions, in your name, listed in the roadmap before you commit.</p>
+<p><b>How long does it take?</b> Audit: two weeks. First workflow: three to four weeks after that.</p>
+<p><b>What if it doesn't work?</b> If the audit finds nothing worth building, we say so and you keep the roadmap. On a build, we keep tuning until it meets the spec we agreed.</p>
+<p><b>Do you work in French? Are you in Montréal?</b> Oui. Montréal-based, on-site across Greater Montréal, remote everywhere else in North America.</p>
+</div>
+
+<div class="copy">
+<div class="label">Final CTA</div>
+<div class="h">Find out what's worth automating. In 30 minutes.</div>
+<p>Pick a time below, or send a note and we'll reply within one business day.</p>
+<span class="btn">Pick a time</span>
+<p class="note" style="margin-top:8px">Form: Name · Work email · "What's eating your team's time?" · Send. Plus hello@meridianflow.ca and a phone number in plain text.</p>
+</div>
+</section>
+
+<section id="conversion">
+<h2>Conversion fixes</h2>
+<h3>The contact experience</h3>
+<ul>
+<li><b>Fix or replace the form this week.</b> If the site is static, wire the form to a hosted form endpoint (Formspree, Basin, Netlify Forms) and test it from a phone. If it is on a site builder, reconnect the notification email. Either way, add a plain-text email address next to it so a broken form is never a dead end again.</li>
+<li><b>Make booking the primary action.</b> Embed a free scheduler (Cal.com or Calendly) with a 30-minute "Fit call" event. Booking a slot is lower-effort than composing a message and gives you a committed time.</li>
+<li><b>Three fields, no more.</b> Name, work email, one text box: "What's eating your team's time?" Every extra field costs roughly 7% of submissions. The text box doubles as qualification.</li>
+<li><b>Confirm loudly.</b> Success state on the page ("Got it. You'll hear from [name] within one business day.") and an auto-reply from a human address, not noreply.</li>
+<li><b>Put the CTA everywhere a decision happens.</b> Nav, hero, after Examples, after Pricing, after FAQ, and the final block. Same wording each time.</li>
+</ul>
+<h3>Trust signals that cost nothing</h3>
+<ul>
+<li>Founder name, photo, and a line about your daily AI work on the homepage.</li>
+<li>Two numbers from MP Cutting Tools, with their permission. "12 hours a week" beats "the full pipeline".</li>
+<li>Pricing on the page. Owners assume hidden prices are high prices.</li>
+<li>"Which tools" list with logos they recognise.</li>
+<li>A one-page redacted roadmap sample on /audit so they can see what $2,500 buys.</li>
+</ul>
+<h3>A second path for the not-ready visitor</h3>
+<p>Most visitors will not book on the first visit. Give them one lightweight thing to take: a one-page checklist, "Twelve tasks worth automating first in a small business", in exchange for an email. Keep it out of the hero; place it after Examples and in the footer. Phase 2, after the primary path works.</p>
+<h3>Test hypotheses once traffic exists</h3>
+<ol>
+<li>If the hero headline names the work ("Hand off the work your team keeps redoing") instead of the technology, fit-call bookings will rise, because the reader recognises their own problem in the first line.</li>
+<li>If pricing is on the homepage, booking rate will rise even if some visitors leave, because the ones who book will be qualified and the total lead count will not fall.</li>
+<li>If the primary CTA is "Pick a time" with a calendar instead of a form, completed leads will rise, because scheduling asks for less writing than a message.</li>
+</ol>
+</section>
+
+<section id="design">
+<h2>Design brief</h2>
+<div class="decision">
+<b>Direction</b><span>"The workshop ledger". Practical, hand-built, confident. The site should feel like a well-organised operations binder, not a startup launch page. One highlight colour used the way a person uses a marker on a checklist: to mark the tasks worth handing off.</span>
+<b>Palette</b><span>Cool paper <code>#F4F6F7</code> · Ink <code>#111B29</code> · Marker yellow <code>#FFD23F</code> (the only accent) · Blue-grey muted <code>#66717F</code> · Rule <code>#D8DEE3</code> · Success green <code>#1E7A5F</code> for "handed off" states only. Dark theme swaps to deep ink ground with the same marker.</span>
+<b>Type</b><span>Schibsted Grotesk for headlines (newspaper-derived, credible, slightly editorial). Figtree for body (warm, readable at 17px for a non-technical reader). Tabular numerals everywhere a number sits in a column.</span>
+<b>Layout</b><span>Left-aligned, 1120px max, generous whitespace and thin rules between sections instead of cards everywhere. Hero splits copy left and the signature "task list" right. Examples are a two-column grid of before/after strips, not icon tiles.</span>
+<b>Signature</b><span>The highlighted task row. It appears in the hero (a Tuesday-morning list with rows marked "handed off"), in Examples (Before struck through, After highlighted), and in the final CTA. It is the visual version of the promise.</span>
+<b>Avoid</b><span>Stock photos of robots or glowing brains. Gradient heroes. Icon grids with one-word labels. Anything that reads "AI startup". This buyer trusts things that look like their own office.</span>
+</div>
+<p>The Meridian desktop app's identity (warm cream, Instrument Serif, forest green and gold) belongs to that product. The service site is its own thing and should look like the client's world, not a fintech terminal.</p>
+</section>
+
+<section id="interaction">
+<h2>Interaction brief</h2>
+<ul>
+<li><b>Primary flow:</b> land → recognise pain (Sound familiar) → see concrete work (Examples) → see path and price → check the person → clear objections → pick a time. Every section ends within one scroll of a CTA.</li>
+<li><b>Nav:</b> anchors scroll smoothly; the booking button stays visible on scroll. On mobile, a bottom sticky bar carries "Book a free fit call".</li>
+<li><b>Form states:</b> inline validation on blur; specific messages ("Enter a work email so we can reply"); submit button reads "Send" then "Sending…" then success text in place. Never clear the form on error.</li>
+<li><b>FAQ:</b> disclosure widgets, keyboard operable, first item open by default so the section is never an empty list of questions.</li>
+<li><b>Motion:</b> the hero task list strikes through and highlights three rows once, on load, over about 1.6 seconds. Everything else is hover and focus only. Respect <code>prefers-reduced-motion</code>.</li>
+<li><b>Empty and error states:</b> if the calendar embed fails to load, the fallback form and email are already visible beneath it, so the page never shows a blank box.</li>
+<li><b>Accessibility:</b> 4.5:1 contrast on all text, visible focus rings, headings in order, buttons that say what happens, form labels always visible.</li>
+<li><b>Verification:</b> submit the form from a phone and a laptop; book a test slot; confirm both emails arrive; run Lighthouse and keep mobile load under three seconds; check French toggle if shipped.</li>
+</ul>
+</section>
+
+<section id="traffic">
+<h2>Traffic: the site can't convert visitors it doesn't get</h2>
+<p>The rewrite fixes conversion. Traffic needs three channels that fit a solo practitioner and cost time, not money.</p>
+<ul>
+<li><b>Founder-led LinkedIn.</b> Two posts a week showing one real workflow each: the before, the after, one screenshot. The homepage Examples section is the content calendar. Link to /work, not the homepage.</li>
+<li><b>Local search.</b> A Google Business Profile for Montréal, and a homepage that says "Montréal" and "automatisation IA" in real sentences. "AI automation Montreal" is a query owners actually type and the competition is thin.</li>
+<li><b>Guides that answer a tool-specific question.</b> "How to draft quotes from Outlook emails with AI", "Automating supplier invoices into QuickBooks". Each ends with the audit. The existing audit post is the model; it just needs siblings.</li>
+</ul>
+<p>Referrals from the first two or three clients will outperform all of this, which is one more reason to get their numbers on the page.</p>
+</section>
+
+<section id="plan">
+<h2>Implementation plan</h2>
+<h3>This week</h3>
+<ol>
+<li>Fix or replace the contact form. Add the email address in plain text. Test from a phone.</li>
+<li>Set up a free 30-minute "Fit call" event in Cal.com or Calendly. Link it from the nav.</li>
+<li>Swap the hero headline and subhead for the draft above.</li>
+<li>Add the Find/Build/Run block with prices.</li>
+</ol>
+<h3>This month</h3>
+<ol>
+<li>Rebuild the homepage in the section order above, using the prototype as the visual reference.</li>
+<li>Ask MP Cutting Tools for two numbers and a name. Add the founder section.</li>
+<li>Write /audit with a redacted roadmap sample. Write /about.</li>
+<li>Add the FAQ. Add tool logos.</li>
+<li>Ship the French homepage and booking page.</li>
+</ol>
+<h3>This quarter</h3>
+<ol>
+<li>Two more case studies on /work, each with numbers.</li>
+<li>The checklist lead magnet and its email follow-up.</li>
+<li>Three tool-specific guides on the blog.</li>
+<li>Google Business Profile and a LinkedIn cadence built from the Examples section.</li>
+<li>Review booking rate; test the three hypotheses one at a time.</li>
+</ol>
+</section>
+
+<section id="questions">
+<h2>Unresolved questions</h2>
+<ul>
+<li><b>Founder details.</b> Name, photo, one paragraph of background, and whether Meridian has anyone else on the bench. The About section is empty without it.</li>
+<li><b>Build and Care pricing.</b> $5,000 and $500/month are proposals. Confirm against your margins and the audit's stated "$5,000–$15,000+" range.</li>
+<li><b>Guarantees.</b> Are you comfortable with "we keep tuning until it meets the spec"?</li>
+<li><b>Site stack and hosting.</b> Needed to decide how to fix the form and where to embed the calendar.</li>
+<li><b>MP Cutting Tools.</b> Permission for a name, a role, two numbers, and a logo. Any other past clients?</li>
+<li><b>"Virtual employee".</b> Drop it, or keep it as the Build tier's nickname?</li>
+<li><b>French.</b> Québec businesses expect French, and the province's language rules apply to commercial websites. Is a French homepage in scope for this month?</li>
+<li><b>The name.</b> "Meridian" collides with several funded AI companies and "meridian flow" is an acupuncture term. Keep and lean on the founder's name, or rename before investing in content?</li>
+</ul>
+</section>
+</main>
+</div>
